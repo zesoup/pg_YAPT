@@ -40,7 +40,7 @@ sub main {
 
         $config->{dbh}->{worsttime} = 0;
 	unless ( exists $config->{main}->{i} ){$config->{main}->{i}=0;}
-        unless ($config->{main}->{i}++ % ( $hchar - 1 ) ) {
+        unless ($config->{main}->{i}++ % ( $hchar - 2 ) ) {
             for (
                 my $i = 0 ;
                 exists $config->{boards}->{default}->{checks}->{$i} ;
