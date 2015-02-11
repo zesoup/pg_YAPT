@@ -1,9 +1,9 @@
+
+package waldiff;
 use warnings;
 use strict;
 
 use 5.20.1;
-
-package waldiff;
 
 sub new {
     my ( $name, %params ) = @_;
@@ -30,10 +30,9 @@ sub show {
     my $hexvalnew = substr $metric->[0][0], 2, 20;
     my $diffBytes = hex($hexvalnew) - hex($hexvalold);
     $diffBytes = $diffBytes / ( 1024 * 1024 );    #approx MB
-    $obj->{cache}=$metric;
-    $out .= "" . sprintf("%8.2f",$diffBytes ). "MB";
+    $obj->{cache} = $metric;
+    $out .= "" . sprintf( "%8.2f", $diffBytes ) . "MB";
     return $out;
 }
 
 1;
-

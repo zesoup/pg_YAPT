@@ -1,9 +1,9 @@
+
+package tuplediff;
 use warnings;
 use strict;
 
 use 5.20.1;
-
-package tuplediff;
 
 sub new {
     my ( $name, %params ) = @_;
@@ -24,16 +24,17 @@ sub show {
     my $packname = __PACKAGE__;
 
     my $valold = $obj->{cache}[0][0];
-    $metric = $config->{dbi}
-     ->returnAndStore( "select sum( coalesce(idx_tup_fetch,0)+coalesce(seq_tup_read,0) ) as reads from pg_stat_user_tables; ", $obj->{name} );
+    $metric = $config->{dbi}->returnAndStore(
+"select sum( coalesce(idx_tup_fetch,0)+coalesce(seq_tup_read,0) ) as reads from pg_stat_user_tables; ",
+        $obj->{name}
+    );
 
-    my $valnew = $metric->[0][0];
+    my $valnew    = $metric->[0][0];
     my $diffReads = $valnew - $valold;
 
-    $obj->{cache}=$metric;
+    $obj->{cache} = $metric;
     $out .= "" . $diffReads . "";
     return $out;
 }
 
 1;
-
