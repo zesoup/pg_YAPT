@@ -3,7 +3,7 @@ $config = {
     #Main Information and Params
     version    => "2.0",
     database   => {},
-    updatetime => 150000,    #in ms
+    updatetime => 2000000,    #in ms
 
     # checks are the check-templates.
     # unless used in the current board,
@@ -21,6 +21,11 @@ $config = {
     checks => {
         hosttime => {
             plugin => "thetime",
+        },
+        "MaxBlt" => {
+            query =>
+"select substring(relname,0,6)||'/'||(n_dead_tup/n_live_tup)::text from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;",
+            plugin => "querycheck"
         },
         "WAL/d" => {
             query  => "select pg_current_xlog_location();",
@@ -46,11 +51,15 @@ $config = {
             query  => "select to_char(current_timestamp, 'HH24:MI:SS');",
             plugin => "querycheck"
         },
-        countrows => {
-            query  => "select reltuples from pg_class where relname='neu';",
+        "TotRows/d" => {
+            query  => "select sum(coalesce(reltuples,0) ) from pg_class;",
             plugin => "querycheck",
+            action => sub {
+                return
+                  sprintf( "%.1f", $_[0]->{metric}->[0][0] / 1000000 ) . "mil";
+              }
         },
-        UserCount => {
+        User => {
             query  => "select count(*) from pg_stat_activity;",
             plugin => "querycheck"
         },
@@ -67,7 +76,10 @@ $config = {
 "select sum( coalesce(heap_blks_read,0)+coalesce(heap_blks_hit,0)+coalesce( idx_blks_hit, 0)+coalesce( idx_blks_hit, 0)+ coalesce(toast_blks_read, 0)+coalesce(toast_blks_hit,0)+coalesce(tidx_blks_hit,0)+coalesce(tidx_blks_hit,0) ) as reads from pg_statio_user_tables ;",
             plugin => "querycheck",
             action => sub {
-                return $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
+                return sprintf( "%.f",
+                    ( $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0] ) /
+                      ( ( 1 / 8 ) * 1000 ) )
+                  . "MB";
               }
           }
 
@@ -80,12 +92,14 @@ $config = {
         default => {
             template => "rows",    #unused for now
             checks   => {
-                1 => "UserCount",
+                1 => "User",
                 0 => "TheTime",
                 2 => "TupRead/d",
                 3 => "WAL/d",
                 5 => "txID/d",
-                4 => "BlkAcc/d"
+                4 => "BlkAcc/d",
+                6 => "TotRows/d",
+                7 => "MaxBlt"
             }
         }
     }
