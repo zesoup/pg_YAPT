@@ -31,30 +31,30 @@ sub main {
         open my $FH, "<", $configFile or next; #It is possible that opening the config fails.
 						# Busy waiting!
 
-        if ( stat($FH)->mtime != $config->{age} ) {
+        if ( (not exists $config->{age}) or ( stat($FH)->mtime != $config->{age} )) {
             $config    = utils::reloadConf($configFile);
             $config->{age} = stat($FH)->mtime;
-            $line .= utils::widen( $wchar, "New Config!", 1, 0 ) . "\n";
+            $line .= utils::widen( $wchar, "New Config!", 1, 0," " ) . "\n";
         }
         close $FH;
 
         $config->{dbh}->{worsttime} = 0;
 	unless ( exists $config->{main}->{i} ){$config->{main}->{i}=0;}
-        unless ( ++ $config->{main}->{i} % ( $hchar - 2 ) ) {
+        unless ($config->{main}->{i}++ % ( $hchar - 1 ) ) {
             for (
                 my $i = 0 ;
                 exists $config->{boards}->{default}->{checks}->{$i} ;
-                $config->{main}->{i}++
+                $i++
               )
             {
                 $line .= utils::widen(
                     $wchar,
                     $config->{boards}->{default}->{checks}->{$i},
-                    $config->{boards}->{default}->{hashsize}, 0
+                    $config->{boards}->{default}->{hashsize}, 0 , "▔"
                 );
             }
             $line .= "\n";
-            $line .= utils::fillwith( "+", $wchar ) . "\n";
+            $line .= utils::fillwith( "▔", $wchar ) . "\n";
         }
         for (
             my $i = 0 ;
@@ -62,13 +62,14 @@ sub main {
             $i++
           )
         {
+        if ($i>0){$line .= '│';}
             $line .= utils::widen(
                 $wchar,
                 $config->{checks}
                   ->{ $config->{boards}->{default}->{checks}->{$i} }
                   ->{instance}->show(),
                 $config->{boards}->{default}->{hashsize},
-                0
+                1, " "
             );
         }
         print $line;

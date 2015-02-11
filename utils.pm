@@ -7,17 +7,17 @@ use File::Slurp;
 use POSIX;
 
 sub widen {
-    my ( $totalWidth, $text, $cnt, $extra ) = @_;
-    my $textwidth = length($text) + 1;             #for |seperator
+    my ( $totalWidth, $text, $cnt, $extra , $char) = @_;
+    my $textwidth = length($text)+$extra ;             #for |seperator
     my $widthper  = floor( $totalWidth / $cnt );
 
     #if ($textwidth % 2){$textwidth++};
     #say floor($totalWidth/$cnt)-$textwidth ." ";
     #say(( ($totalWidth/$cnt)-$textwidth )/2.0 ). " ";
     my $out =
-        fillwith( " ", floor( ( $widthper / 2 - $textwidth / 2 ) ) )
+        fillwith( $char, floor( ( $widthper / 2 - $textwidth / 2 ) ) )
       . $text
-      . fillwith( " ", ceil( ( $widthper / 2 - $textwidth / 2 ) ) ) . "|";
+      . fillwith( $char, ceil( ( $widthper / 2 - $textwidth / 2 ) ) ) ;
 
     return $out;
 }
@@ -35,9 +35,14 @@ sub fillwith {
 sub reloadConf {
     my $configfile = shift;
     my $config;
+
+    # Lets read the config.
+    # If eval doesnt work, use require. It'll fail too, but
+    # provide a good debug
     eval( read_file($configfile) or die "could not read config" )
-      or die "could not parse config";
-    
+	or die "could not parse config";
+
+
     $config->{dbi} = pg_dbi::new( config => $config );
     foreach my $key ( keys %{ $config->{checks} } ) {
         require "plugins/" . $config->{checks}->{$key}->{plugin} . ".pm"
