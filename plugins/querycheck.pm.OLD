@@ -1,0 +1,52 @@
+use warnings;
+use strict;
+
+use 5.20.1;
+
+package querycheck;
+
+sub new {
+my ($name, %params) = @_;
+#use Data::Dumper;
+#say Dumper(\%params);
+my $self = {config => $params{config}, name => $params{name}  };
+bless ($self, __PACKAGE__);
+return $self;
+
+
+}
+
+sub show {
+    my ( $obj ) = @_;
+#use Data::Dumper;
+#say Dumper( $obj->{name} );
+    my $config = $obj->{config};
+
+    my $params = $obj->{config}->{checks}->{ $obj->{name} };
+    my $out = "";
+
+    my $metric;
+    my $packname = __PACKAGE__;
+
+    if ( $config->{cache}->{ $obj->{name} } ) {
+        my $hexvalold = substr $config->{cache}->{ $obj->{name} }[0][0], 2, 10;
+        $metric = $config->{dbi}->returnAndStore( $params->{query}, $obj->{name} );
+
+        my $hexvalnew = substr $metric->[0][0], 2, 20;
+#say $hexvalnew;
+#say $hexvalold;
+        my $diffBytes = hex($hexvalnew) - hex($hexvalold);
+        $diffBytes = $diffBytes / ( 1024 * 1024 );    #approx MB
+
+        $out .= "Diff:" . $diffBytes . " ";
+    }
+    else {
+        $metric = $config->{dbi}->returnAndStore( $params->{query}, $obj->{name} );
+    }
+
+    $out .= $metric->[0][0];
+    return $out;
+}
+
+1;
+
