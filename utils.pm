@@ -37,7 +37,7 @@ sub reloadConf {
     my $config;
     eval( read_file($configfile) or die "could not read config" )
       or die "could not parse config";
-
+    
     $config->{dbi} = pg_dbi::new( config => $config );
     foreach my $key ( keys %{ $config->{checks} } ) {
         require "plugins/" . $config->{checks}->{$key}->{plugin} . ".pm"

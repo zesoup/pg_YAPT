@@ -3,7 +3,7 @@ $config = {
     #Main Information and Params
     version    => "2.0",
     database   => {},
-    updatetime => 1000000,    #in ms
+    updatetime => 100000,    #in ms
                               #Checks
     checks     => {
         thetime => {

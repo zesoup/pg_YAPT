@@ -2,58 +2,49 @@
 
 use strict;
 use warnings;
-use File::Slurp;
-
 use 5.20.1;
 
 use FindBin;
 use lib $FindBin::Bin;
 
 use File::stat;
-
+use File::Slurp;
 use Time::HiRes qw(usleep nanosleep);
 use Term::ReadKey;
 use POSIX;
 
 use utils qw(widen fillwith reloadConf);
 
-sub main {
+require 'pg_dbi.pm';
 
-### vv dirty, make sexy vv ###
-    my $str = 'pg_dbi.pm';
-    require $str;
-    $str = 'boards/default.pm';
-    require $str;
+
+sub main {
+    # Main Function
+
 
     my $configFile = "config.pm";
-
-    my $config;
-
- # $config->{boards}->{default}->{instance} = default::new( config => $config );
-### ^^-----------------^^  ###
-
-    my $configAge = 0;
-    my $i         = 0;
+    my $config = undef;
     while (1) {
         my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
 
         my $line = "\n";
-        open my $FH, "<", $configFile or next;
-        my $configTime = stat($FH)->mtime;
-        if ( $configTime != $configAge ) {
-            $configAge = $configTime;
-            $config    = utils::reloadConf($configFile);
-            $line .= utils::widen( $wchar, "New Config!", 1, 0 ) . "\n";
+        open my $FH, "<", $configFile or next; #It is possible that opening the config fails.
+						# Busy waiting!
 
-            #say "Config Changed! WTB reloadhook!";
+        if ( stat($FH)->mtime != $config->{age} ) {
+            $config    = utils::reloadConf($configFile);
+            $config->{age} = stat($FH)->mtime;
+            $line .= utils::widen( $wchar, "New Config!", 1, 0 ) . "\n";
         }
         close $FH;
+
         $config->{dbh}->{worsttime} = 0;
-        unless ( ++$i % ( $hchar - 2 ) ) {
+	unless ( exists $config->{main}->{i} ){$config->{main}->{i}=0;}
+        unless ( ++ $config->{main}->{i} % ( $hchar - 2 ) ) {
             for (
                 my $i = 0 ;
                 exists $config->{boards}->{default}->{checks}->{$i} ;
-                $i++
+                $config->{main}->{i}++
               )
             {
                 $line .= utils::widen(
