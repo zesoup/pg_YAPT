@@ -4,7 +4,7 @@ Yet another postgres top
 A top-like postgres tool thats designed to be highly customizable.
 
 #Install:
-run it and change the config.pm as required.
+n/a
 
 #ToDO:
 - Implement arguments
