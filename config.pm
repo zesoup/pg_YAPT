@@ -3,8 +3,7 @@ $config = {
     #Main Information and Params
     version    => "2.0",
     database   => {},
-    updatetime => 2000000,    #in ms
-
+    defaultboard=>'wall',
     # checks are the check-templates.
     # unless used in the current board,
     # they are not executed.
@@ -24,27 +23,29 @@ $config = {
         },
         "MaxBlt" => {
             query =>
-"select substring(relname,0,6)||'/'||(n_dead_tup/n_live_tup)::text from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;",
+"select substring(relname,length(relname)-7)||'/'||round((coalesce(n_dead_tup,0)/coalesce(n_live_tup::numeric,1) )*100,0)::text||'%' from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;",
             plugin => "querycheck"
         },
         "WAL/d" => {
             query  => "select pg_current_xlog_location();",
             plugin => "querycheck",
             action => sub {
-                return sprintf(
-                    "%.1f",
-                    (
-                        hex( substr( $_[0]->{metric}->[0][0], 2, 10 ) ) -
-                          hex( substr( $_[0]->{oldmetric}->[0][0], 2, 10 ) )
-                    ) / ( 1024 * 1024 )
-                ) . "MB";
+                my $walwritten = (
+                    hex( substr( $_[0]->{metric}->[0][0], 2, 10 ) ) -
+                      hex( substr( $_[0]->{oldmetric}->[0][0], 2, 10 ) ) ) /
+                  ( 1024 * 1024 );
+                return [
+                    sprintf( "%.1f", $walwritten ) . "MB",
+                    int( $walwritten / 10 )
+                ];
               }
         },
         'txID/d' => {
             query  => "select txid_current();",
             plugin => "querycheck",
             action => sub {
-                return $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
+                return [ $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0],
+                    0 ];
               }
         },
         TheTime => {
@@ -55,8 +56,11 @@ $config = {
             query  => "select sum(coalesce(reltuples,0) ) from pg_class;",
             plugin => "querycheck",
             action => sub {
-                return
-                  sprintf( "%.1f", $_[0]->{metric}->[0][0] / 1000000 ) . "mil";
+                return [
+                    sprintf( "%.1f", $_[0]->{metric}->[0][0] / 1000000 )
+                      . "mil",
+                    0
+                ];
               }
         },
         User => {
@@ -64,11 +68,19 @@ $config = {
             plugin => "querycheck"
         },
         'TupRead/d' => {
-            query =>
-"select sum( coalesce(idx_tup_fetch,0)+coalesce(seq_tup_read,0) ) as reads from pg_stat_user_tables; ",
+            query => "select 
+(select sum( coalesce(idx_tup_fetch,0)+coalesce(seq_tup_read,0) )  from pg_stat_user_tables ) as tab
+,
+(select sum( coalesce(idx_tup_fetch,0)+coalesce(idx_tup_read,0) ) from pg_stat_user_indexes ) as idx
+",
             plugin => "querycheck",
             action => sub {
-                return $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
+                my $TBL = $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
+                my $IDX = $_[0]->{metric}->[0][1] - $_[0]->{oldmetric}->[0][1];
+                return [
+                    $TBL . 'T/' . $IDX . 'I'
+                    , 0
+                ];
               }
         },
         'BlkAcc/d' => {
@@ -76,10 +88,16 @@ $config = {
 "select sum( coalesce(heap_blks_read,0)+coalesce(heap_blks_hit,0)+coalesce( idx_blks_hit, 0)+coalesce( idx_blks_hit, 0)+ coalesce(toast_blks_read, 0)+coalesce(toast_blks_hit,0)+coalesce(tidx_blks_hit,0)+coalesce(tidx_blks_hit,0) ) as reads from pg_statio_user_tables ;",
             plugin => "querycheck",
             action => sub {
-                return sprintf( "%.f",
-                    ( $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0] ) /
-                      ( ( 1 / 8 ) * 1000 ) )
-                  . "MB";
+                return [
+                    sprintf(
+                        "%.f",
+                        (
+                            $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0]
+                        ) / ( ( 1 / 8 ) * 1000 )
+                      )
+                      . "MB",
+                    0
+                ];
               }
           }
 
@@ -89,8 +107,9 @@ $config = {
     # e.g. printf-output, curses or JSON.
 
     boards => {
-        default => {
+        wall => {
             template => "rows",    #unused for now
+	   updatetime=> 1000000, #ms
             checks   => {
                 1 => "User",
                 0 => "TheTime",
@@ -100,7 +119,16 @@ $config = {
                 4 => "BlkAcc/d",
                 6 => "TotRows/d",
                 7 => "MaxBlt"
+            },
+            json => {
+                template => "rows",    #unused for now
+                checks   => {
+                    1 => "User",
+                    0 => "TheTime",
+                    7 => "MaxBlt"
+                }
             }
-        }
+          }
+
     }
 };

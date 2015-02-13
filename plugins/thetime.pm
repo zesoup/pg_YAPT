@@ -16,14 +16,20 @@ sub new {
 }
 
 sub show {
+    my ($obj)  = @_;
+    my $packname = __PACKAGE__;
 
-    #my $conf = shift;
-    my $pack = __PACKAGE__;
 
-    # @_[0]->{config}->{checks}->{$pack}->{timeout} );
-    #@_[0]->{age} = localtime;
-    my $now_string = strftime "%H:%M:%S", localtime;
-    return "" . $now_string;
+    $obj->{metric} =
+      strftime "%H:%M:%S", localtime;
+    unless ( exists $obj->{oldmetric} ) {
+        $obj->{oldmetric} = $obj->{metric};
+    }
+    if   ( exists $obj->{action} ) { $obj->{returnVal} = $obj->{action}($obj); }
+    else                              
+    { $obj->{returnVal} = [($obj->{metric}->[0][0],0)]; }
+    $obj->{oldmetric} = $obj->{metric};
+    return 0;
 }
 
 1;

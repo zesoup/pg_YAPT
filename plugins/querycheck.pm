@@ -9,27 +9,26 @@ sub new {
     my ( $name, %params ) = @_;
 
     my $self = { config => $params{config}, name => $params{name} };
-    bless( $self, __PACKAGE__ );
+#    bless( $self, __PACKAGE__ );
     return $self;
 
 }
 
 sub show {
     my ($obj)  = @_;
-    my $params = $obj->{config}->{checks}->{ $obj->{name} };
-    my $out    = "";
-
     my $packname = __PACKAGE__;
 
-    $params->{metric} =
-      $obj->{config}->{dbi}->returnAndStore( $params->{query}, $obj->{name} );
-    unless ( exists $params->{oldmetric} ) {
-        $params->{oldmetric} = $params->{metric};
+
+    $obj->{metric} =
+      $obj->{config}->{dbi}->returnAndStore( $obj->{query}, $obj->{name} );
+    unless ( exists $obj->{oldmetric} ) {
+        $obj->{oldmetric} = $obj->{metric};
     }
-    if   ( exists $params->{action} ) { $out .= $params->{action}($params); }
-    else                              { $out .= $params->{metric}->[0][0]; }
-    $params->{oldmetric} = $params->{metric};
-    return $out;
+    if   ( exists $obj->{action} ) { $obj->{returnVal} = $obj->{action}($obj); }
+    else                              
+    { $obj->{returnVal} = [($obj->{metric}->[0][0],0)]; }
+    $obj->{oldmetric} = $obj->{metric};
+    return 0;
 }
 
 1;
