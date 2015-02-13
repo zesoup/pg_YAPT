@@ -31,9 +31,11 @@ sub returnAndStore {
 
     my $out = $stm->fetchall_arrayref() or die "could not fetcgh array";
     my ( $ends, $endms ) = gettimeofday;
-    if ( $config->{config}->{dbh}->{worsttime} < $endms - $startms )
-    {    # SECONDS!
-        $config->{config}->{dbh}->{worsttime} = $endms - $startms;
+    unless ( exists $config->{config}->{dbh}->{worsed} ) {
+        $config->{config}->{dbh}->{worsed} = 0;
+    }
+    if ( $config->{config}->{dbh}->{worsed} < $endms - $startms ) {   # SECONDS!
+        $config->{config}->{dbh}->{worsed} = $endms - $startms;
     }
 
     $config->{config}->{cache}->{$cachename} = $out;

@@ -15,7 +15,7 @@ sub new {
 
 }
 
-sub show {
+sub execute {
     my ($obj)  = @_;
     my $packname = __PACKAGE__;
 

@@ -19,9 +19,12 @@ sub main {
     #use Data::Dumper;
     #say Dumper($config);
     require "boards/wall.pm";
+    require "boards/json.pm";
 
     bless( $config->{boards}->{wall}, "wall" );
-    $config->{boards}->{wall}->loop($config);
+    bless( $config->{boards}->{json}, "json" );
+
+    $config->{boards}->{json}->loop($config);
 
     return 1;
 }

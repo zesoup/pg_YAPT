@@ -1,12 +1,13 @@
 use 5.20.1;
 
-package wall;
+package json;
 
 use Time::HiRes qw(usleep nanosleep);
 use Term::ReadKey;
 use POSIX;
 use Term::ANSIColor;
 use utils;
+use JSON;
 
 sub new {
     my (%params) = @_;
@@ -18,68 +19,19 @@ sub new {
 }
 
 sub loop {
+    my ( $obj, $config ) = @_;
+    my $output = {};
 
-    while (1) {
-
-        my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
-
-        my $line = "\n";
-        if ( utils::checkAndReloadConfig() ) {
-
-            $line .= utils::widen( $wchar, "New Config!", 1, 0, " " ) . "\n";
-        }
-        my $config = $utils::config;
-        $config->{dbh}->{worsttime} = 0;
-        unless ( exists $config->{main}->{i} ) { $config->{main}->{i} = 0; }
-        unless ( $config->{main}->{i}++ % ( $hchar - 2 ) ) {
-            for (
-                my $i = 0 ;
-                exists $config->{boards}->{wall}->{checks}->{$i} ;
-                $i++
-              )
-            {
-                $line .= color("Green")
-                  . utils::widen(
-                    $wchar,
-                    $config->{boards}->{wall}->{checks}->{$i},
-                    $config->{boards}->{wall}->{hashsize},
-                    0, "▔"
-                  );
-            }
-            $line .= "\n";
-            $line .= utils::fillwith( "▔", $wchar ) . "\n" . color("reset");
-        }
-        for (
-            my $i = 0 ;
-            exists $config->{boards}->{wall}->{checks}->{$i} ;
-            $i++
-          )
-        {
-            my $currentCheck =
-              $config->{checks}->{ $config->{boards}->{wall}->{checks}->{$i} };
-            if ( $i > 0 ) { $line .= color("yellow").'│'.color("reset"); }
-            $currentCheck->show();
-            my $tup    = $currentCheck->{returnVal};
-            my $metric = $tup->[0];
-            my $status = $tup->[1];
-            my $clr    = "White";
-            if    ( $status == 1 ) { $clr = "Yellow"; }
-            elsif ( $status >= 2 ) { $clr = "Red"; }
-
-            $line .= color($clr)
-              . utils::widen( $wchar, $metric,
-                $config->{boards}->{wall}->{hashsize},
-                1, " " )
-              . color("reset");
-
-        }
-        print $line;
-        $| = 1;
-
-        use Data::Dumper;
-
-        usleep $config->{updatetime};
+    foreach ( @{ $obj->{checks} } ) {
+        my $currentCheck = $config->{checks}->{$_};
+        $currentCheck->execute();
+        my $tup = $currentCheck->{returnVal};
+        $output->{$_} = $tup;
     }
+
+    my $json_text = encode_json $output;
+
+    say $json_text;
 
 }
 

@@ -44,7 +44,7 @@ sub loop {
             my $currentCheck =
               $config->{checks}->{ $obj->{checks}->{$i} };
             if ( $i > 0 ) { $line .= color("yellow") . '│' . color("reset"); }
-            $currentCheck->show();
+            $currentCheck->execute();
             my $tup    = $currentCheck->{returnVal};
             my $metric = $tup->[0];
             my $status = $tup->[1];
@@ -60,8 +60,6 @@ sub loop {
         }
         print $line;
         $| = 1;
-
-        use Data::Dumper;
 
         usleep $obj->{updatetime};
     }

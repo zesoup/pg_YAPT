@@ -1,9 +1,10 @@
 $config = {
 
     #Main Information and Params
-    version    => "2.0",
-    database   => {},
-    defaultboard=>'wall',
+    version      => "2.0",
+    database     => {},
+    defaultboard => 'wall',
+
     # checks are the check-templates.
     # unless used in the current board,
     # they are not executed.
@@ -77,10 +78,7 @@ $config = {
             action => sub {
                 my $TBL = $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
                 my $IDX = $_[0]->{metric}->[0][1] - $_[0]->{oldmetric}->[0][1];
-                return [
-                    $TBL . 'T/' . $IDX . 'I'
-                    , 0
-                ];
+                return [ $TBL . 'T/' . $IDX . 'I', 0 ];
               }
         },
         'BlkAcc/d' => {
@@ -108,9 +106,9 @@ $config = {
 
     boards => {
         wall => {
-            template => "rows",    #unused for now
-	   updatetime=> 1000000, #ms
-            checks   => {
+            template   => "rows",     #unused for now
+            updatetime => 1000000,    #ms
+            checks     => {
                 1 => "User",
                 0 => "TheTime",
                 2 => "TupRead/d",
@@ -119,15 +117,11 @@ $config = {
                 4 => "BlkAcc/d",
                 6 => "TotRows/d",
                 7 => "MaxBlt"
-            },
-            json => {
-                template => "rows",    #unused for now
-                checks   => {
-                    1 => "User",
-                    0 => "TheTime",
-                    7 => "MaxBlt"
-                }
             }
+        },
+        json => {
+            template => "rows",    #unused for now
+            checks   => ["User","TheTime", "MaxBlt"]
           }
 
     }
