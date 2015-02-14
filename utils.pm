@@ -8,14 +8,13 @@ use POSIX;
 use pg_dbi;
 use Time::HiRes qw(usleep);
 
-our$config;
-our$configFile;
-
+our $config;
+our $configFile;
 
 sub widen {
-    my ( $totalWidth, $text, $cnt, $extra , $char) = @_;
-    unless($text){$text = "n/a";}
-    my $textwidth = length($text)+$extra ;             #for |seperator
+    my ( $totalWidth, $text, $cnt, $extra, $char ) = @_;
+    unless ($text) { $text = "n/a"; }
+    my $textwidth = length($text) + $extra;        #for |seperator
     my $widthper  = floor( $totalWidth / $cnt );
 
     #if ($textwidth % 2){$textwidth++};
@@ -24,7 +23,7 @@ sub widen {
     my $out =
         fillwith( $char, floor( ( $widthper / 2 - $textwidth / 2 ) ) )
       . $text
-      . fillwith( $char, ceil( ( $widthper / 2 - $textwidth / 2 ) ) ) ;
+      . fillwith( $char, ceil( ( $widthper / 2 - $textwidth / 2 ) ) );
 
     return $out;
 }
@@ -43,12 +42,8 @@ sub reloadConf {
     my $configfile = shift;
     my $config;
 
-    # Lets read the config.
-    # If eval doesnt work, use require. It'll fail too, but
-    # provide a good debug
     eval( read_file($configfile) or die "could not read config" )
-	or die "could not parse config";
-
+      or die "could not parse config";
 
     $config->{dbi} = pg_dbi::new( config => $config );
     foreach my $key ( keys %{ $config->{checks} } ) {
@@ -56,33 +51,42 @@ sub reloadConf {
           or print "could not load $key";
     }
 
-    foreach my $key ( keys %{ $config->{checks} } ) {
-    
-          bless($config->{checks}->{$key}, $config->{checks}->{$key}->{plugin} );
-          $config->{checks}->{$key}->{name} = $key;
-          $config->{checks}->{$key}->{config} = $config;
+    foreach my $key ( keys %{ $config->{UI} } ) {
+        require "UI/" . $key . ".pm"
+          or print "could not load $key";
+        bless( $config->{UI}->{$key}, $key );
     }
 
-    $config->{boards}->{wall}->{hashsize} =
-      keys %{ $config->{boards}->{wall}->{checks} };
+    foreach my $key ( keys %{ $config->{checks} } ) {
+
+        bless( $config->{checks}->{$key}, $config->{checks}->{$key}->{plugin} );
+        $config->{checks}->{$key}->{name}   = $key;
+        $config->{checks}->{$key}->{config} = $config;
+    }
+
+    $config->{UI}->{wall}->{hashsize} =
+      keys %{ $config->{UI}->{wall}->{checks} };
 
     return $config;
 }
 
-sub checkAndReloadConfig{
-while (1){
-usleep 10000;
-        open my $FH, "<", $configFile or next; #It is possible that opening the config fails.
-						# Busy waiting!
-        if ( (not exists $config->{age}) or ( stat($FH)->mtime != $config->{age} )) {
-            $config    = reloadConf($configFile);
+sub checkAndReloadConfig {
+    while (1) {
+        usleep 10000;
+        open my $FH, "<", $configFile
+          or next;    #It is possible that opening the config fails.
+                      # Busy waiting!
+        if (   ( not exists $config->{age} )
+            or ( stat($FH)->mtime != $config->{age} ) )
+        {
+            $config = reloadConf($configFile);
             $config->{age} = stat($FH)->mtime;
             close $FH;
             return 1;
         }
         close $FH;
         return 0;
-        }
+    }
 }
 
 1;

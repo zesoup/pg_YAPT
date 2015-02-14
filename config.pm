@@ -3,7 +3,7 @@ $config = {
     #Main Information and Params
     version      => "2.0",
     database     => {},
-    defaultboard => 'wall',
+    defaultui => 'wall',
 
     # checks are the check-templates.
     # unless used in the current board,
@@ -104,7 +104,7 @@ $config = {
     # Boards are output-modules.
     # e.g. printf-output, curses or JSON.
 
-    boards => {
+   UI => {
         wall => {
             template   => "rows",     #unused for now
             updatetime => 1000000,    #ms
@@ -120,9 +120,11 @@ $config = {
             }
         },
         json => {
-            template => "rows",    #unused for now
             checks   => ["User","TheTime", "MaxBlt"]
-          }
+          },
+        curses => {
+            checks => ["TheTime","User","MaxBlt"]
+	 }
 
     }
 };

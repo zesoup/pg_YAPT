@@ -9,6 +9,12 @@ use lib $FindBin::Bin;
 
 use utils;
 
+use Getopt::Long;
+
+# setup my defaults
+my $UI   = "wall";
+my $help = 0;
+
 sub main {
     $utils::config     = undef;
     $utils::configFile = "config.pm";
@@ -16,17 +22,27 @@ sub main {
     utils::checkAndReloadConfig();
     my $config = $utils::config;
 
-    #use Data::Dumper;
-    #say Dumper($config);
-    require "boards/wall.pm";
-    require "boards/json.pm";
+    unless ( exists $config->{UI}->{$UI} ) {
+        say "Unknown UI!";
+        print "Try: ";
+        foreach ( keys %{ $config->{UI} } ) {
+            print '"' . $_ . '" ';
 
-    bless( $config->{boards}->{wall}, "wall" );
-    bless( $config->{boards}->{json}, "json" );
-
-    $config->{boards}->{json}->loop($config);
+        }
+        exit(1);
+    }
+    $config->{UI}->{$UI}->loop($config);
 
     return 1;
+}
+
+GetOptions(
+    'ui=s'  => \$UI,
+    'help!' => \$help,
+) or die "Incorrect usage!\n";
+if ($help) {
+    print "This is help! It's part of the todo!\n";
+    exit(0);
 }
 
 main;
