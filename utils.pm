@@ -35,7 +35,7 @@ sub cacheConfig {
 
 sub widen {
     my ( $totalWidth, $text, $cnt, $extra, $char ) = @_;
-    unless ($text) { $text = "n/a"; }
+    #unless ($text) { $text = "n/a"; }
     my $textwidth = length($text) + $extra;        #for |seperator
     my $widthper  = floor( $totalWidth / $cnt );
 
