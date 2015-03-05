@@ -1,8 +1,8 @@
 $config = {
 
     #Main Information and Params
-    version      => "2.0",
-    database     => {},
+    version   => "2.0",
+    database  => {},
     defaultui => 'wall',
 
     # checks are the check-templates.
@@ -27,21 +27,21 @@ $config = {
 "select substring(relname,length(relname)-7)||'/'||round((coalesce(n_dead_tup,0)/coalesce(n_live_tup::numeric,1) )*100,0)::text||'%' from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;",
             plugin => "querycheck"
         },
-        "WAL/d" => {
-            query  => "select pg_current_xlog_location();",
-            plugin => "querycheck",
-            action => sub {
+        "WAL" => {
+            query   => "select pg_current_xlog_location();",
+            isDelta => 1,
+            plugin  => "querycheck",
+            units   => ["MB"],
+            action  => sub {
                 my $walwritten = (
                     hex( substr( $_[0]->{metric}->[0][0], 2, 10 ) ) -
                       hex( substr( $_[0]->{oldmetric}->[0][0], 2, 10 ) ) ) /
                   ( 1024 * 1024 );
-                return [
-                    sprintf( "%.1f", $walwritten ) . "MB",
-                    int( $walwritten / 10 )
-                ];
+                return [ sprintf( "%.1f", $walwritten ),
+                    int( $walwritten / 10 ) ];
               }
         },
-        'txID/d' => {
+        'txID' => {
             query  => "select txid_current();",
             plugin => "querycheck",
             action => sub {
@@ -51,40 +51,52 @@ $config = {
         },
         TheTime => {
             query  => "select to_char(current_timestamp, 'HH24:MI:SS');",
+           # query => "select pg_sleep(1.9);",
             plugin => "querycheck"
         },
-        "TotRows/d" => {
+        "TotRows" => {
             query  => "select sum(coalesce(reltuples,0) ) from pg_class;",
             plugin => "querycheck",
+            units  => ["m"],
             action => sub {
-                return [
-                    sprintf( "%.1f", $_[0]->{metric}->[0][0] / 1000000 )
-                      . "mil",
-                    0
-                ];
+                return [ sprintf( "%.1f", $_[0]->{metric}->[0][0] / 1000000 ),
+                    0 ];
               }
         },
         User => {
             query  => "select count(*) from pg_stat_activity;",
             plugin => "querycheck"
         },
-        'TupRead/d' => {
-            query => "select 
-(select sum( coalesce(idx_tup_fetch,0)+coalesce(seq_tup_read,0) )  from pg_stat_user_tables ) as tab
-,
-(select sum( coalesce(idx_tup_fetch,0)+coalesce(idx_tup_read,0) ) from pg_stat_user_indexes ) as idx
-",
+        'TupReadT' => {
+            query =>
+"select sum( coalesce(idx_tup_fetch,0)+coalesce(seq_tup_read,0) )  from pg_stat_user_tables ",
             plugin => "querycheck",
+            units  => [""],
             action => sub {
                 my $TBL = $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
-                my $IDX = $_[0]->{metric}->[0][1] - $_[0]->{oldmetric}->[0][1];
-                return [ $TBL . 'T/' . $IDX . 'I', 0 ];
+                return [ floor($TBL / 1.0), 0 ];
               }
         },
-        'BlkAcc/d' => {
+
+        'TupReadI' => {
+            query =>
+"select sum( coalesce(idx_tup_fetch,0)+coalesce(idx_tup_read,0) ) from pg_stat_user_indexes",
+            plugin => "querycheck",
+            units  => [""],
+            action => sub {
+                my $IDX = $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
+                return [ floor($IDX / 1.0), 0 ];
+              }
+        },
+        'Random' => {
+            query  => 'select random()*20',
+            plugin => "querycheck"
+        },
+        'BlkAcc' => {
             query =>
 "select sum( coalesce(heap_blks_read,0)+coalesce(heap_blks_hit,0)+coalesce( idx_blks_hit, 0)+coalesce( idx_blks_hit, 0)+ coalesce(toast_blks_read, 0)+coalesce(toast_blks_hit,0)+coalesce(tidx_blks_hit,0)+coalesce(tidx_blks_hit,0) ) as reads from pg_statio_user_tables ;",
             plugin => "querycheck",
+            units  => ["MB"],
             action => sub {
                 return [
                     sprintf(
@@ -92,8 +104,7 @@ $config = {
                         (
                             $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0]
                         ) / ( ( 1 / 8 ) * 1000 )
-                      )
-                      . "MB",
+                    ),
                     0
                 ];
               }
@@ -104,27 +115,22 @@ $config = {
     # Boards are output-modules.
     # e.g. printf-output, curses or JSON.
 
-   UI => {
+    UI => {
         wall => {
-            template   => "rows",     #unused for now
-            updatetime => 1000000,    #ms
-            checks     => {
-                1 => "User",
-                0 => "TheTime",
-                2 => "TupRead/d",
-                3 => "WAL/d",
-                5 => "txID/d",
-                4 => "BlkAcc/d",
-                6 => "TotRows/d",
-                7 => "MaxBlt"
-            }
+            template   => "rows",    #unused for now
+            updatetime => 1000000,    #ns
+            checks     => [
+                "User", "TheTime", "TupReadT", "TupReadI",
+                "WAL",  "txID",    "BlkAcc",   "TotRows"
+            ]
         },
         json => {
-            checks   => ["User","TheTime", "MaxBlt"]
-          },
+            updatetime => 1000000,
+            checks     => [ "Random", "WAL", "User", "TheTime", "MaxBlt" ]
+        },
         curses => {
-            checks => ["TheTime","User","MaxBlt"]
-	 }
+            checks => [ "TheTime", "User", "MaxBlt" ]
+          }
 
     }
 };

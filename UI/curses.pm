@@ -28,60 +28,50 @@ sub loop {
     my $output = {};
     my $cui = new Curses::UI( -color_support => 1 );
 
-        my $n        = 1;
-        my $widclock = $cui->add(
-            $_, 'Window',
-            -border => 1,
-            -height => 2,
-                -padtop=>10,
-            -x      => ( rand() * 100 ) % 100,
-            -width  => 75
-        );
-    foreach ( @{ $obj->{checks} } ) {
-        #my $currentCheck = $config->{checks}->{$_};
-        #$currentCheck->execute();
-        #my $tup = $currentCheck->{returnVal};
-        #$output->{$_} = $tup;
-#        my $n        = 1;
-#        my $widclock = $cui->add(
-#            $_, 'Window',
-#            -border => 1,
-#            -height => 1,
-#		-padtop=>10,
-#            -x      => ( rand() * 100 ) % 100,
-#            -width  => 25
-#        );
-
+    my $n        = 1;
+    my $widclock = $cui->add(
+        $_, 'Window',
+        -border => 1,
+        -height => 5,
+        -padtop => 10,
+        -x      => ( rand() * 100 ) % 50,
+        -width  => 35
+    );
         $winclock::label = $widclock->add(
-            'w'.$_, 'Label',
-            -text  => $_."init",
+            'wmainlabel', 'Label',
+            -text  => $_ . "init",
             -bold  => 0,
-            height => 1,
-            -width => 25
+            height => 15,
+            -width => 15
         );
-    #    $winclock::label->draw();
-        my $mu = $winclock::label;
-        my $me = $_;
-    $cui->set_timer( 'update_timer'.$_, sub{
-            #say $_;
-            #my $currentCheck = $config->{checks}->{$_};
-            #$currentCheck->execute();
-            #my $tup = $currentCheck->{returnVal};
-            #$output->{$_} = $tup;
+my $me = $winclock::label;
+        $cui->set_timer(
+            'update_timer' . $_,
+            sub {
 
-            $mu->{'-text'} = $me;
-               }, 1);    # call back in here
+my $args = '';
+    foreach ( @{ $obj->{checks} } ) {
+my $currentCheck = $config->{checks}->{$_};
+$currentCheck->execute();
 
-#        sub call {
-#            my $currentCheck = $config->{checks}->{$_};
-#            $currentCheck->execute();
-#            my $tup = $currentCheck->{returnVal};
-#            $output->{$_} = $tup;
-#           
-#            $winclock::label->{'-text'} = 'das';
-#        }
+$args.= $_.':'.$currentCheck->{returnVal}[0].'\n';
+}
 
-    }
+                $winclock::label->{'-text'} = $args;
+            },
+            1
+        );    # call back in here
+
+        #        sub call {
+        #            my $currentCheck = $config->{checks}->{$_};
+        #            $currentCheck->execute();
+        #            my $tup = $currentCheck->{returnVal};
+        #            $output->{$_} = $tup;
+        #
+        #            $winclock::label->{'-text'} = 'das';
+        #        }
+
+    
     $cui->set_binding( sub { exit(0); }, "\cQ" );
     $cui->set_binding( sub { exit(0); }, "\cC" );
 

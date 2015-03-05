@@ -9,7 +9,6 @@ use DBI;
 sub new {
     my (%params) = @_;
     my $self = { config => $params{config} };
-
     bless( $self, __PACKAGE__ );
     $self->{dbh} = init();
     return $self;
@@ -17,7 +16,9 @@ sub new {
 
 sub init {
     my $dbh = DBI->connect( 'DBI:Pg:host=127.0.0.1;dbname=postgres', "", "" )
-      or die "Couldn't connect to database: " . DBI->errstr;
+       or die "Couldn't connect to Database";
+    $dbh->{AutoCommit}=0;
+    $dbh->{ReadOnly}=1;
     unless ($dbh) { exit(1); }
     return $dbh;
 }

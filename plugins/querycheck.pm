@@ -18,7 +18,7 @@ sub execute {
     my ($obj)  = @_;
     my $packname = __PACKAGE__;
 
-
+    utils::stampbegin($obj);
     $obj->{metric} =
       $obj->{config}->{dbi}->returnAndStore( $obj->{query}, $obj->{name} );
     unless ( exists $obj->{oldmetric} ) {
@@ -28,6 +28,7 @@ sub execute {
     else                              
     { $obj->{returnVal} = [($obj->{metric}->[0][0],0)]; }
     $obj->{oldmetric} = $obj->{metric};
+    utils::stampend($obj);
     return 0;
 }
 

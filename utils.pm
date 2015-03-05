@@ -5,11 +5,33 @@ use 5.20.1;
 use File::stat;
 use File::Slurp;
 use POSIX;
-use pg_dbi;
-use Time::HiRes qw(usleep);
 
-our $config;
+use Digest::MD5 qw(md5_hex);
+
+use pg_dbi;
+use Time::HiRes qw(usleep gettimeofday);
+
 our $configFile;
+our $config;
+
+sub cacheConfig {
+    open my $FH, ">", ".cache.pm";
+    use Data::Dumper;
+    $Data::Dumper::Deparse  = 1;
+    $Data::Dumper::Purity   = 1;
+    $Data::Dumper::Freezer  = sub { bless $_, ".."; };
+    $Data::Dumper::Varname  = "config";
+    $Data::Dumper::Sortkeys = sub {
+        my $out = [];
+        foreach ( keys %{ $_[0] } ) {
+            unless ( $_ eq 'dbi' ) { push( @{$out}, $_ ) }
+        }
+        return $out;
+    };
+    say $FH Dumper($config);
+    close $FH;
+    return 0;
+}
 
 sub widen {
     my ( $totalWidth, $text, $cnt, $extra, $char ) = @_;
@@ -38,14 +60,37 @@ sub fillwith {
     return $out;
 }
 
+sub getMD5ofFile{
+my $file = shift;
+open( my $FILE, $file );
+    binmode($FILE);
+    my $output =  Digest::MD5->new->addfile($FILE)->hexdigest ;
+    close($FILE);
+return $output;
+}
+
+
 sub reloadConf {
     my $configfile = shift;
-    my $config;
 
+    #    my $config;
+    my $config1 = undef;
+    if ( exists $config->{dbi} ){$config->{dbi}->{dbh}->disconnect;}
     eval( read_file($configfile) or die "could not read config" )
-      or die "could not parse config";
+      or die "could not parse config";    
+    #do $configfile or die "Cant load Config";
+    #require ($configfile);
 
+    if ($config1) {
+        $config = $config1;
+    }
+
+    
+    unless ( exists $config->{magicnumber}){
+    $config->{magicnumber} = getMD5ofFile( $configfile );}
+    
     $config->{dbi} = pg_dbi::new( config => $config );
+
     foreach my $key ( keys %{ $config->{checks} } ) {
         require "plugins/" . $config->{checks}->{$key}->{plugin} . ".pm"
           or print "could not load $key";
@@ -65,28 +110,39 @@ sub reloadConf {
     }
 
     $config->{UI}->{wall}->{hashsize} =
-      keys %{ $config->{UI}->{wall}->{checks} };
-
+      @{$config->{UI}->{wall}->{checks}};
     return $config;
 }
 
 sub checkAndReloadConfig {
-    while (1) {
-        usleep 10000;
-        open my $FH, "<", $configFile
-          or next;    #It is possible that opening the config fails.
-                      # Busy waiting!
-        if (   ( not exists $config->{age} )
-            or ( stat($FH)->mtime != $config->{age} ) )
-        {
-            $config = reloadConf($configFile);
-            $config->{age} = stat($FH)->mtime;
-            close $FH;
-            return 1;
-        }
+
+    #while (1) {
+    #    usleep 10000;
+    open my $FH, "<", $configFile
+      or return 1;    #It is possible that opening the config fails.
+    if (   ( not exists $config->{age} )
+        or ( stat($FH)->mtime != $config->{age} ) )
+    {
+        $config = reloadConf($configFile);
+        $config->{age} = stat($FH)->mtime;
         close $FH;
-        return 0;
+        return 1;
     }
+    close $FH;
+    return 0;
+
+    #  }
+}
+
+sub stampbegin{
+my ($obj) = @_;
+$obj->{initstamp}= gettimeofday();
+return;
+}
+
+sub stampend{
+my ($obj) = @_;
+$obj->{endstamp} =  gettimeofday();
 }
 
 1;
