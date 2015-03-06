@@ -15,7 +15,7 @@ $config = {
             updatetime => 1000000,    #ns
             checks     => [
                 "User",  "WAL",   "txID", "BlkAcc","SIZE",
-                "TotRows", "Locks","RTupT", "RTupI", "I/U/D", "S/I"
+                "TotRows", "Locks","RTupT", "RTupI", "Locks", "TheTime"
             ]
         },
         json => {
@@ -29,7 +29,7 @@ $config = {
         csv=> {
             updatetime => 1000000,
             checks     => [
-                "I/U/D", "WAL",    "User",    "TheTime",
+                "TotRows", "WAL",    "User",    "TheTime",
                 "MaxBlt", "BlkAcc", "TotRows", "Locks",
                 "txID"
             ]

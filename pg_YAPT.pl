@@ -42,11 +42,8 @@ sub main {
     $utils::configFile = $configFile;
     utils::checkAndReloadConfig();
     if ($reattachable) {
-	#my $configMagic = $utils::config->{magicnumber};
         $utils::configFile = $cacheFile;
         utils::checkAndReloadConfig();
-        #if ( $configMagic ne $utils::config->{magicnumber} )
-        #{die "Config and Cache Magics dont match!";}
 
         $utils::configFile = $configFile;
         $utils::config->{Reattachable} = 1;
@@ -59,11 +56,10 @@ sub main {
         print "Try: ";
         foreach ( keys %{ $config->{UI} } ) {
             print '"' . $_ . '" ';
-
         }
         exit(1);
     }
-    while ($utils::config->{UI}->{$UI}->loop($utils::config) eq "continue"){};
+    while ($utils::config->{UI}->{$UI}->loop($utils::config, $UIopts ) eq "continue"){};
 
     return 1;
 }
