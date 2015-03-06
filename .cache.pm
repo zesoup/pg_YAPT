@@ -1,9 +1,10 @@
 $config1 = {
-             'age' => '1425651376',
-             'version' => '2.0',
+             'defaultui' => 'wall',
+             'database' => {
+                             'connection' => 'host=127.0.0.1;dbname=postgres;application_name=pg_YAPT'
+                           },
              'checks' => {
                            'Locks' => bless( {
-                                               'config' => {},
                                                'name' => 'Locks',
                                                'oldmetric' => [
                                                                 [
@@ -11,39 +12,175 @@ $config1 = {
                                                                   0
                                                                 ]
                                                               ],
-                                               'endstamp' => '1425651377.7991',
-                                               'initstamp' => '1425651377.79815',
-                                               'query' => '
-select * from 
-(select count(*) from pg_locks where pid != pg_backend_pid())as locks 
-join 
-(select count(*) from pg_locks where not granted) as notgranted 
-on true;',
                                                'returnVal' => [
-                                                                '0[0]',
+                                                                '0/0',
                                                                 0
                                                               ],
+                                               'initstamp' => '1425669909.4087',
+                                               'config' => {},
+                                               'plugin' => 'querycheck',
                                                'action' => sub {
                                                                package utils;
                                                                use warnings;
                                                                use strict;
                                                                use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
                                                                no feature 'array_base';
-                                                               return [$_[0]{'metric'}[0][0] . '[' . $_[0]{'metric'}[0][1] . ']', $_[0]{'metric'}[0][1]];
+                                                               return [$_[0]{'metric'}[0][0] . '/' . $_[0]{'metric'}[0][1] . '', floor($_[0]{'metric'}[0][1] / 5)];
                                                            },
-                                               'metric' => [],
-                                               'plugin' => 'querycheck'
+                                               'endstamp' => '1425669909.40924',
+                                               'query' => '
+select * from 
+(select count(*) from pg_locks where pid != pg_backend_pid())as locks 
+join 
+(select count(*) from pg_locks where not granted) as notgranted 
+on true;',
+                                               'metric' => []
                                              }, 'querycheck' ),
-                           'AnlzAge' => bless( {
-                                                 'query' => 'select extract(epoch from now() -min(last_analyze))::integer from pg_stat_user_tables ;',
-                                                 'name' => 'AnlzAge',
-                                                 'config' => {},
-                                                 'plugin' => 'querycheck'
-                                               }, 'querycheck' ),
-                           'S/I' => bless( {
+                           'WAL' => bless( {
+                                             'name' => 'WAL',
+                                             'initstamp' => '1425669909.39241',
+                                             'oldmetric' => [
+                                                              [
+                                                                '6/7BEF42E8',
+                                                                '00000001000000060000007B'
+                                                              ]
+                                                            ],
+                                             'returnVal' => [
+                                                              '0|0',
+                                                              0
+                                                            ],
+                                             'units' => [
+                                                          'MB'
+                                                        ],
+                                             'endstamp' => '1425669909.39263',
                                              'config' => {},
+                                             'action' => sub {
+                                                             package utils;
+                                                             use warnings;
+                                                             use strict;
+                                                             use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
+                                                             no feature 'array_base';
+                                                             my $walwritten = (hex(substr $_[0]{'metric'}[0][0], 2, 10) - hex(substr $_[0]{'oldmetric'}[0][0], 2, 10)) / 1048576;
+                                                             my $walfiles = hex($_[0]{'metric'}[0][1]) - hex($_[0]{'oldmetric'}[0][1]);
+                                                             return [$walfiles . '|' . sprintf('%.0f', $walwritten), $walfiles];
+                                                         },
+                                             'plugin' => 'querycheck',
+                                             'isDelta' => 1,
+                                             'query' => 'select pg_current_xlog_location(), pg_xlogfile_name(pg_current_xlog_location() );',
+                                             'metric' => []
+                                           }, 'querycheck' ),
+                           'TheTime' => bless( {
+                                                 'endstamp' => '1425669909.39361',
+                                                 'plugin' => 'querycheck',
+                                                 'config' => {},
+                                                 'metric' => [
+                                                               [
+                                                                 2623
+                                                               ]
+                                                             ],
+                                                 'query' => 'SELECT floor(extract(epoch from  now() - pg_postmaster_start_time() ))',
+                                                 'name' => 'TheTime',
+                                                 'initstamp' => '1425669909.39337',
+                                                 'oldmetric' => [],
+                                                 'returnVal' => [
+                                                                  2623,
+                                                                  0
+                                                                ]
+                                               }, 'querycheck' ),
+                           'TotRows' => bless( {
+                                                 'endstamp' => '1425669909.4087',
+                                                 'units' => [
+                                                              'm'
+                                                            ],
+                                                 'plugin' => 'querycheck',
+                                                 'action' => sub {
+                                                                 package utils;
+                                                                 use warnings;
+                                                                 use strict;
+                                                                 use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
+                                                                 no feature 'array_base';
+                                                                 return [sprintf('%.1f', $_[0]{'metric'}[0][0] / 1000000), 0];
+                                                             },
+                                                 'config' => {},
+                                                 'metric' => [
+                                                               [
+                                                                 '2.08471e+06'
+                                                               ]
+                                                             ],
+                                                 'query' => 'select sum(coalesce(reltuples,0) ) from pg_class;',
+                                                 'name' => 'TotRows',
+                                                 'initstamp' => '1425669909.4083',
+                                                 'oldmetric' => [],
+                                                 'returnVal' => [
+                                                                  '2.1',
+                                                                  0
+                                                                ]
+                                               }, 'querycheck' ),
+                           'Random' => bless( {
+                                                'initstamp' => '1425669909.39179',
+                                                'oldmetric' => [
+                                                                 [
+                                                                   '2.85319804213941'
+                                                                 ]
+                                                               ],
+                                                'returnVal' => [
+                                                                 '2.85319804213941',
+                                                                 0
+                                                               ],
+                                                'name' => 'Random',
+                                                'query' => 'select random()*20',
+                                                'metric' => [],
+                                                'endstamp' => '1425669909.39241',
+                                                'plugin' => 'querycheck',
+                                                'config' => {}
+                                              }, 'querycheck' ),
+                           'User' => bless( {
+                                              'returnVal' => [
+                                                               1,
+                                                               0
+                                                             ],
+                                              'oldmetric' => [
+                                                               [
+                                                                 1
+                                                               ]
+                                                             ],
+                                              'initstamp' => '1425669909.39264',
+                                              'name' => 'User',
+                                              'metric' => [],
+                                              'query' => 'select count(*) from pg_stat_activity;',
+                                              'plugin' => 'querycheck',
+                                              'config' => {},
+                                              'endstamp' => '1425669909.39337'
+                                            }, 'querycheck' ),
+                           'txID' => bless( {
+                                              'oldmetric' => [
+                                                               [
+                                                                 11923456
+                                                               ]
+                                                             ],
+                                              'returnVal' => [
+                                                               1,
+                                                               0
+                                                             ],
+                                              'initstamp' => '1425669909.40924',
+                                              'name' => 'txID',
+                                              'query' => 'select txid_current();',
+                                              'metric' => [],
+                                              'config' => {},
+                                              'plugin' => 'querycheck',
+                                              'action' => sub {
+                                                              package utils;
+                                                              use warnings;
+                                                              use strict;
+                                                              use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
+                                                              no feature 'array_base';
+                                                              return [$_[0]{'metric'}[0][0] - $_[0]{'oldmetric'}[0][0], 0];
+                                                          },
+                                              'endstamp' => '1425669909.40939'
+                                            }, 'querycheck' ),
+                           'S/I' => bless( {
+                                             'plugin' => 'querycheck',
                                              'name' => 'S/I',
-                                             'query' => 'select sum(seq_scan), sum(idx_scan) from pg_stat_user_tables;',
                                              'action' => sub {
                                                              package utils;
                                                              use warnings;
@@ -56,22 +193,119 @@ on true;',
                                                              if ($total <= 0) {
                                                                  $total = 1;
                                                              }
-                                                             return ['(' . floor(10 * $SEQ / $total) . '/' . floor(10 * $IDX / $total) . ')x' . floor($total / 1000) . 'k', 0];
+                                                             return [floor(10 * $SEQ / $total) . '/' . floor(10 * $IDX / $total) . '|' . ceil($total / 10000) . 'k', 0];
                                                          },
-                                             'plugin' => 'querycheck'
+                                             'config' => {},
+                                             'query' => 'select sum(seq_scan), sum(idx_scan) from pg_stat_user_tables;'
                                            }, 'querycheck' ),
+                           'SIZE' => bless( {
+                                              'name' => 'SIZE',
+                                              'plugin' => 'querycheck',
+                                              'config' => {},
+                                              'units' => [
+                                                           'GB'
+                                                         ],
+                                              'query' => 'select round(sum(pg_database_size(datname))/(1024*1024*1024),1) from pg_database;'
+                                            }, 'querycheck' ),
+                           'hosttime' => bless( {
+                                                  'config' => {},
+                                                  'name' => 'hosttime',
+                                                  'plugin' => 'thetime'
+                                                }, 'thetime' ),
+                           'RTupI' => bless( {
+                                               'query' => 'select sum( coalesce(idx_tup_fetch,0)+coalesce(idx_tup_read,0) ) from pg_stat_user_indexes',
+                                               'action' => sub {
+                                                               package utils;
+                                                               use warnings;
+                                                               use strict;
+                                                               use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
+                                                               no feature 'array_base';
+                                                               my $IDX = $_[0]{'metric'}[0][0] - $_[0]{'oldmetric'}[0][0];
+                                                               return [floor($IDX / 1), 0];
+                                                           },
+                                               'plugin' => 'querycheck',
+                                               'name' => 'RTupI',
+                                               'config' => {},
+                                               'units' => [
+                                                            ''
+                                                          ]
+                                             }, 'querycheck' ),
                            'PID' => bless( {
-                                             'plugin' => 'querycheck',
-                                             'name' => 'PID',
                                              'query' => 'Select pg_backend_pid();',
+                                             'name' => 'PID',
+                                             'plugin' => 'querycheck',
                                              'config' => {}
                                            }, 'querycheck' ),
-                           'I/U/D' => bless( {
+                           'MaxBlt' => bless( {
+                                                'plugin' => 'querycheck',
+                                                'config' => {},
+                                                'endstamp' => '1425669909.40584',
+                                                'query' => 'select substring(relname,length(relname)-7)||\'/\'||round((coalesce(n_dead_tup,0)/coalesce(n_live_tup::numeric,1) )*100,0)::text||\'%\' from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;',
+                                                'metric' => [
+                                                              []
+                                                            ],
+                                                'name' => 'MaxBlt',
+                                                'returnVal' => [
+                                                                 undef,
+                                                                 0
+                                                               ],
+                                                'oldmetric' => [],
+                                                'initstamp' => '1425669909.39361'
+                                              }, 'querycheck' ),
+                           'BlkAcc' => bless( {
+                                                'name' => 'BlkAcc',
+                                                'initstamp' => '1425669909.40586',
+                                                'returnVal' => [
+                                                                 0,
+                                                                 0
+                                                               ],
+                                                'oldmetric' => [
+                                                                 [
+                                                                   0
+                                                                 ]
+                                                               ],
+                                                'endstamp' => '1425669909.40829',
+                                                'units' => [
+                                                             'MB'
+                                                           ],
+                                                'action' => sub {
+                                                                package utils;
+                                                                use warnings;
+                                                                use strict;
+                                                                use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
+                                                                no feature 'array_base';
+                                                                return [sprintf('%.f', ($_[0]{'metric'}[0][0] - $_[0]{'oldmetric'}[0][0]) / 125), 0];
+                                                            },
+                                                'plugin' => 'querycheck',
+                                                'config' => {},
+                                                'query' => 'select sum( coalesce(heap_blks_read,0)+coalesce(heap_blks_hit,0)+coalesce( idx_blks_hit, 0)+coalesce( idx_blks_hit, 0)+ coalesce(toast_blks_read, 0)+coalesce(toast_blks_hit,0)+coalesce(tidx_blks_hit,0)+coalesce(tidx_blks_hit,0) ) as reads from pg_statio_user_tables ;',
+                                                'metric' => []
+                                              }, 'querycheck' ),
+                           'RTupT' => bless( {
+                                               'query' => 'select sum( coalesce(idx_tup_fetch,0)+coalesce(seq_tup_read,0) )  from pg_stat_user_tables ',
+                                               'units' => [
+                                                            ''
+                                                          ],
                                                'plugin' => 'querycheck',
-                                               'returnVal' => [
-                                                                '(0/0/0)x0k',
-                                                                0
-                                                              ],
+                                               'action' => sub {
+                                                               package utils;
+                                                               use warnings;
+                                                               use strict;
+                                                               use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
+                                                               no feature 'array_base';
+                                                               my $TBL = $_[0]{'metric'}[0][0] - $_[0]{'oldmetric'}[0][0];
+                                                               return [floor($TBL / 1), 0];
+                                                           },
+                                               'name' => 'RTupT',
+                                               'config' => {}
+                                             }, 'querycheck' ),
+                           'AnlzAge' => bless( {
+                                                 'config' => {},
+                                                 'name' => 'AnlzAge',
+                                                 'plugin' => 'querycheck',
+                                                 'query' => 'select extract(epoch from now() -min(last_analyze))::integer from pg_stat_user_tables ;'
+                                               }, 'querycheck' ),
+                           'I/U/D' => bless( {
                                                'action' => sub {
                                                                package utils;
                                                                use warnings;
@@ -88,283 +322,31 @@ on true;',
                                                                $INS = floor(10 * $INS / $total);
                                                                $UPD = floor(10 * $UPD / $total);
                                                                $DEL = floor(10 * $DEL / $total);
-                                                               return ['(' . $INS . '/' . $UPD . '/' . $DEL . ')x' . floor($total / 1000) . 'k', 0];
+                                                               return [$INS . '/' . $UPD . '/' . $DEL . '|' . ceil($total / 10000) . 'k', 0];
                                                            },
-                                               'metric' => [
-                                                             [
-                                                               205371117,
-                                                               10261165,
-                                                               1189294,
-                                                               68309,
-                                                               20
-                                                             ]
-                                                           ],
-                                               'query' => 'select sum(tup_returned), sum(tup_fetched), sum(tup_inserted), sum(tup_updated), sum(tup_deleted) from pg_stat_database;',
-                                               'initstamp' => '1425651377.77692',
-                                               'endstamp' => '1425651377.78971',
                                                'name' => 'I/U/D',
-                                               'oldmetric' => [],
-                                               'config' => {}
-                                             }, 'querycheck' ),
-                           'txID' => bless( {
-                                              'query' => 'select txid_current();',
-                                              'plugin' => 'querycheck',
-                                              'returnVal' => [
-                                                               1,
-                                                               0
-                                                             ],
-                                              'action' => sub {
-                                                              package utils;
-                                                              use warnings;
-                                                              use strict;
-                                                              use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
-                                                              no feature 'array_base';
-                                                              return [$_[0]{'metric'}[0][0] - $_[0]{'oldmetric'}[0][0], 0];
-                                                          },
-                                              'metric' => [
-                                                            [
-                                                              50403
-                                                            ]
-                                                          ],
-                                              'oldmetric' => [],
-                                              'name' => 'txID',
-                                              'config' => {},
-                                              'initstamp' => '1425651377.79911',
-                                              'endstamp' => '1425651377.7997'
-                                            }, 'querycheck' ),
-                           'TotRows' => bless( {
-                                                 'query' => 'select sum(coalesce(reltuples,0) ) from pg_class;',
-                                                 'plugin' => 'querycheck',
-                                                 'returnVal' => [
-                                                                  '0.3',
-                                                                  0
-                                                                ],
-                                                 'units' => [
-                                                              'm'
-                                                            ],
-                                                 'action' => sub {
-                                                                 package utils;
-                                                                 use warnings;
-                                                                 use strict;
-                                                                 use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
-                                                                 no feature 'array_base';
-                                                                 return [sprintf('%.1f', $_[0]{'metric'}[0][0] / 1000000), 0];
-                                                             },
-                                                 'metric' => [
-                                                               [
-                                                                 264973
-                                                               ]
-                                                             ],
-                                                 'oldmetric' => [],
-                                                 'name' => 'TotRows',
-                                                 'config' => {},
-                                                 'endstamp' => '1425651377.79814',
-                                                 'initstamp' => '1425651377.79745'
-                                               }, 'querycheck' ),
-                           'Random' => bless( {
-                                                'config' => {},
-                                                'query' => 'select random()*20',
-                                                'name' => 'Random',
-                                                'plugin' => 'querycheck'
-                                              }, 'querycheck' ),
-                           'WAL' => bless( {
-                                             'metric' => [
-                                                           [
-                                                             '0/1B090C10'
-                                                           ]
-                                                         ],
-                                             'units' => [
-                                                          'MB'
-                                                        ],
-                                             'returnVal' => [
-                                                              '0.0',
-                                                              0
-                                                            ],
-                                             'action' => sub {
-                                                             package utils;
-                                                             use warnings;
-                                                             use strict;
-                                                             use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
-                                                             no feature 'array_base';
-                                                             my $walwritten = (hex(substr $_[0]{'metric'}[0][0], 2, 10) - hex(substr $_[0]{'oldmetric'}[0][0], 2, 10)) / 1048576;
-                                                             return [sprintf('%.1f', $walwritten), int $walwritten / 10];
-                                                         },
-                                             'plugin' => 'querycheck',
-                                             'isDelta' => 1,
-                                             'query' => 'select pg_current_xlog_location();',
-                                             'endstamp' => '1425651377.79039',
-                                             'initstamp' => '1425651377.78972',
-                                             'config' => {},
-                                             'name' => 'WAL',
-                                             'oldmetric' => []
-                                           }, 'querycheck' ),
-                           'User' => bless( {
-                                              'metric' => [
-                                                            [
-                                                              2
-                                                            ]
-                                                          ],
-                                              'returnVal' => [
-                                                               2,
-                                                               0
-                                                             ],
-                                              'plugin' => 'querycheck',
-                                              'query' => 'select count(*) from pg_stat_activity;',
-                                              'initstamp' => '1425651377.7904',
-                                              'endstamp' => '1425651377.79171',
-                                              'config' => {},
-                                              'name' => 'User',
-                                              'oldmetric' => []
-                                            }, 'querycheck' ),
-                           'MaxBlt' => bless( {
-                                                'plugin' => 'querycheck',
-                                                'returnVal' => [
-                                                                 '_tellers/0%',
-                                                                 0
-                                                               ],
-                                                'metric' => [
-                                                              [
-                                                                '_tellers/0%'
-                                                              ]
-                                                            ],
-                                                'query' => 'select 
-substring(relname,length(relname)-7)||\'/\'||round((coalesce(n_dead_tup,0)/coalesce(n_live_tup::numeric+n_dead_tup::numeric,1) )*100,0)::text||\'%\' from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;',
-                                                'initstamp' => '1425651377.79232',
-                                                'endstamp' => '1425651377.79518',
-                                                'name' => 'MaxBlt',
-                                                'oldmetric' => [],
-                                                'config' => {}
-                                              }, 'querycheck' ),
-                           'TheTime' => bless( {
-                                                 'name' => 'TheTime',
-                                                 'oldmetric' => [
-                                                                  [
-                                                                    2684
-                                                                  ]
-                                                                ],
-                                                 'config' => {},
-                                                 'endstamp' => '1425651377.7923',
-                                                 'initstamp' => '1425651377.79172',
-                                                 'query' => 'SELECT floor(extract(epoch from  now() - pg_postmaster_start_time() ))',
-                                                 'plugin' => 'querycheck',
-                                                 'returnVal' => [
-                                                                  2684,
-                                                                  0
-                                                                ],
-                                                 'metric' => []
-                                               }, 'querycheck' ),
-                           'BlkAcc' => bless( {
-                                                'initstamp' => '1425651377.79519',
-                                                'endstamp' => '1425651377.79743',
-                                                'oldmetric' => [
-                                                                 [
-                                                                   731089
-                                                                 ]
-                                                               ],
-                                                'name' => 'BlkAcc',
-                                                'config' => {},
-                                                'plugin' => 'querycheck',
-                                                'metric' => [],
-                                                'action' => sub {
-                                                                package utils;
-                                                                use warnings;
-                                                                use strict;
-                                                                use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
-                                                                no feature 'array_base';
-                                                                return [sprintf('%.f', ($_[0]{'metric'}[0][0] - $_[0]{'oldmetric'}[0][0]) / 125), 0];
-                                                            },
-                                                'units' => [
-                                                             'MB'
-                                                           ],
-                                                'returnVal' => [
-                                                                 0,
-                                                                 0
-                                                               ],
-                                                'query' => 'select sum( coalesce(heap_blks_read,0)+coalesce(heap_blks_hit,0)+coalesce( idx_blks_hit, 0)+coalesce( idx_blks_hit, 0)+ coalesce(toast_blks_read, 0)+coalesce(toast_blks_hit,0)+coalesce(tidx_blks_hit,0)+coalesce(tidx_blks_hit,0) ) as reads from pg_statio_user_tables ;'
-                                              }, 'querycheck' ),
-                           'hosttime' => bless( {
-                                                  'name' => 'hosttime',
-                                                  'config' => {},
-                                                  'plugin' => 'thetime'
-                                                }, 'thetime' ),
-                           'RTupI' => bless( {
-                                               'name' => 'RTupI',
-                                               'query' => 'select sum( coalesce(idx_tup_fetch,0)+coalesce(idx_tup_read,0) ) from pg_stat_user_indexes',
-                                               'config' => {},
                                                'plugin' => 'querycheck',
-                                               'action' => sub {
-                                                               package utils;
-                                                               use warnings;
-                                                               use strict;
-                                                               use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
-                                                               no feature 'array_base';
-                                                               my $IDX = $_[0]{'metric'}[0][0] - $_[0]{'oldmetric'}[0][0];
-                                                               return [floor($IDX / 1), 0];
-                                                           },
-                                               'units' => [
-                                                            ''
-                                                          ]
-                                             }, 'querycheck' ),
-                           'RTupT' => bless( {
                                                'config' => {},
-                                               'query' => 'select sum( coalesce(idx_tup_fetch,0)+coalesce(seq_tup_read,0) )  from pg_stat_user_tables ',
-                                               'name' => 'RTupT',
-                                               'units' => [
-                                                            ''
-                                                          ],
-                                               'action' => sub {
-                                                               package utils;
-                                                               use warnings;
-                                                               use strict;
-                                                               use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval';
-                                                               no feature 'array_base';
-                                                               my $TBL = $_[0]{'metric'}[0][0] - $_[0]{'oldmetric'}[0][0];
-                                                               return [floor($TBL / 1), 0];
-                                                           },
-                                               'plugin' => 'querycheck'
+                                               'query' => 'select sum(tup_returned), sum(tup_fetched), sum(tup_inserted), sum(tup_updated), sum(tup_deleted) from pg_stat_database;'
                                              }, 'querycheck' )
                          },
-             'database' => {
-                             'connection' => 'host=172.26.14.169;port=5494;dbname=postgres;user=discostu;application_name=pg_YAPT'
-                           },
+             'cache' => {
+                          'TotRows' => [],
+                          'BlkAcc' => [],
+                          'TheTime' => [],
+                          'MaxBlt' => [],
+                          'WAL' => [],
+                          'Locks' => [],
+                          'txID' => [],
+                          'User' => [],
+                          'Random' => []
+                        },
+             'Reattachable' => 1,
+             'version' => '2.0',
+             'age' => '1425669908',
              'UI' => {
-                       'csv' => bless( {
-                                         'updatetime' => 1000000,
-                                         'checks' => [
-                                                       'TheTime',
-                                                       'I/U/D',
-                                                       'WAL',
-                                                       'User',
-                                                       'TheTime',
-                                                       'MaxBlt',
-                                                       'BlkAcc',
-                                                       'TotRows',
-                                                       'Locks',
-                                                       'txID'
-                                                     ]
-                                       }, 'csv' ),
-                       'wall' => bless( {
-                                          'updatetime' => 1000000,
-                                          'checks' => [
-                                                        'PID',
-                                                        'User',
-                                                        'WAL',
-                                                        'BlkAcc',
-                                                        'TotRows',
-                                                        'Locks',
-                                                        'MaxBlt',
-                                                        'I/U/D',
-                                                        'S/I'
-                                                      ]
-                                        }, 'wall' ),
-                       'curses' => bless( {
-                                            'checks' => [
-                                                          'TheTime',
-                                                          'User',
-                                                          'MaxBlt'
-                                                        ]
-                                          }, 'curses' ),
                        'json' => bless( {
+                                          'updatetime' => 1000000,
                                           'checks' => [
                                                         'Random',
                                                         'WAL',
@@ -375,57 +357,80 @@ substring(relname,length(relname)-7)||\'/\'||round((coalesce(n_dead_tup,0)/coale
                                                         'TotRows',
                                                         'Locks',
                                                         'txID'
+                                                      ]
+                                        }, 'json' ),
+                       'csv' => bless( {
+                                         'checks' => [
+                                                       'I/U/D',
+                                                       'WAL',
+                                                       'User',
+                                                       'TheTime',
+                                                       'MaxBlt',
+                                                       'BlkAcc',
+                                                       'TotRows',
+                                                       'Locks',
+                                                       'txID'
+                                                     ],
+                                         'updatetime' => 1000000
+                                       }, 'csv' ),
+                       'wall' => bless( {
+                                          'checks' => [
+                                                        'User',
+                                                        'WAL',
+                                                        'txID',
+                                                        'BlkAcc',
+                                                        'SIZE',
+                                                        'TotRows',
+                                                        'Locks',
+                                                        'RTupT',
+                                                        'RTupI',
+                                                        'I/U/D',
+                                                        'S/I'
                                                       ],
                                           'updatetime' => 1000000
-                                        }, 'json' )
-                     },
-             'cache' => {
-                          'Locks' => [],
-                          'User' => [],
-                          'TheTime' => [],
-                          'MaxBlt' => [],
-                          'TotRows' => [],
-                          'WAL' => [],
-                          'I/U/D' => [],
-                          'txID' => [],
-                          'BlkAcc' => []
-                        },
-             'defaultui' => 'wall',
-             'Reattachable' => 1,
-             'magicnumber' => '41c429b9cfcb6e1703854fdf2124bb16'
+                                        }, 'wall' ),
+                       'curses' => bless( {
+                                            'checks' => [
+                                                          'TheTime',
+                                                          'User',
+                                                          'MaxBlt'
+                                                        ]
+                                          }, 'curses' )
+                     }
            };
 $config1->{'checks'}{'Locks'}{'config'} = $config1;
 $config1->{'checks'}{'Locks'}{'metric'} = $config1->{'checks'}{'Locks'}{'oldmetric'};
-$config1->{'checks'}{'AnlzAge'}{'config'} = $config1;
-$config1->{'checks'}{'S/I'}{'config'} = $config1;
-$config1->{'checks'}{'PID'}{'config'} = $config1;
-$config1->{'checks'}{'I/U/D'}{'oldmetric'} = $config1->{'checks'}{'I/U/D'}{'metric'};
-$config1->{'checks'}{'I/U/D'}{'config'} = $config1;
-$config1->{'checks'}{'txID'}{'oldmetric'} = $config1->{'checks'}{'txID'}{'metric'};
-$config1->{'checks'}{'txID'}{'config'} = $config1;
-$config1->{'checks'}{'TotRows'}{'oldmetric'} = $config1->{'checks'}{'TotRows'}{'metric'};
-$config1->{'checks'}{'TotRows'}{'config'} = $config1;
-$config1->{'checks'}{'Random'}{'config'} = $config1;
 $config1->{'checks'}{'WAL'}{'config'} = $config1;
-$config1->{'checks'}{'WAL'}{'oldmetric'} = $config1->{'checks'}{'WAL'}{'metric'};
-$config1->{'checks'}{'User'}{'config'} = $config1;
-$config1->{'checks'}{'User'}{'oldmetric'} = $config1->{'checks'}{'User'}{'metric'};
-$config1->{'checks'}{'MaxBlt'}{'oldmetric'} = $config1->{'checks'}{'MaxBlt'}{'metric'};
-$config1->{'checks'}{'MaxBlt'}{'config'} = $config1;
+$config1->{'checks'}{'WAL'}{'metric'} = $config1->{'checks'}{'WAL'}{'oldmetric'};
 $config1->{'checks'}{'TheTime'}{'config'} = $config1;
-$config1->{'checks'}{'TheTime'}{'metric'} = $config1->{'checks'}{'TheTime'}{'oldmetric'};
-$config1->{'checks'}{'BlkAcc'}{'config'} = $config1;
-$config1->{'checks'}{'BlkAcc'}{'metric'} = $config1->{'checks'}{'BlkAcc'}{'oldmetric'};
+$config1->{'checks'}{'TheTime'}{'oldmetric'} = $config1->{'checks'}{'TheTime'}{'metric'};
+$config1->{'checks'}{'TotRows'}{'config'} = $config1;
+$config1->{'checks'}{'TotRows'}{'oldmetric'} = $config1->{'checks'}{'TotRows'}{'metric'};
+$config1->{'checks'}{'Random'}{'metric'} = $config1->{'checks'}{'Random'}{'oldmetric'};
+$config1->{'checks'}{'Random'}{'config'} = $config1;
+$config1->{'checks'}{'User'}{'metric'} = $config1->{'checks'}{'User'}{'oldmetric'};
+$config1->{'checks'}{'User'}{'config'} = $config1;
+$config1->{'checks'}{'txID'}{'metric'} = $config1->{'checks'}{'txID'}{'oldmetric'};
+$config1->{'checks'}{'txID'}{'config'} = $config1;
+$config1->{'checks'}{'S/I'}{'config'} = $config1;
+$config1->{'checks'}{'SIZE'}{'config'} = $config1;
 $config1->{'checks'}{'hosttime'}{'config'} = $config1;
 $config1->{'checks'}{'RTupI'}{'config'} = $config1;
+$config1->{'checks'}{'PID'}{'config'} = $config1;
+$config1->{'checks'}{'MaxBlt'}{'config'} = $config1;
+$config1->{'checks'}{'MaxBlt'}{'oldmetric'} = $config1->{'checks'}{'MaxBlt'}{'metric'};
+$config1->{'checks'}{'BlkAcc'}{'config'} = $config1;
+$config1->{'checks'}{'BlkAcc'}{'metric'} = $config1->{'checks'}{'BlkAcc'}{'oldmetric'};
 $config1->{'checks'}{'RTupT'}{'config'} = $config1;
-$config1->{'cache'}{'Locks'} = $config1->{'checks'}{'Locks'}{'oldmetric'};
-$config1->{'cache'}{'User'} = $config1->{'checks'}{'User'}{'metric'};
-$config1->{'cache'}{'TheTime'} = $config1->{'checks'}{'TheTime'}{'oldmetric'};
-$config1->{'cache'}{'MaxBlt'} = $config1->{'checks'}{'MaxBlt'}{'metric'};
+$config1->{'checks'}{'AnlzAge'}{'config'} = $config1;
+$config1->{'checks'}{'I/U/D'}{'config'} = $config1;
 $config1->{'cache'}{'TotRows'} = $config1->{'checks'}{'TotRows'}{'metric'};
-$config1->{'cache'}{'WAL'} = $config1->{'checks'}{'WAL'}{'metric'};
-$config1->{'cache'}{'I/U/D'} = $config1->{'checks'}{'I/U/D'}{'metric'};
-$config1->{'cache'}{'txID'} = $config1->{'checks'}{'txID'}{'metric'};
 $config1->{'cache'}{'BlkAcc'} = $config1->{'checks'}{'BlkAcc'}{'oldmetric'};
+$config1->{'cache'}{'TheTime'} = $config1->{'checks'}{'TheTime'}{'metric'};
+$config1->{'cache'}{'MaxBlt'} = $config1->{'checks'}{'MaxBlt'}{'metric'};
+$config1->{'cache'}{'WAL'} = $config1->{'checks'}{'WAL'}{'oldmetric'};
+$config1->{'cache'}{'Locks'} = $config1->{'checks'}{'Locks'}{'oldmetric'};
+$config1->{'cache'}{'txID'} = $config1->{'checks'}{'txID'}{'oldmetric'};
+$config1->{'cache'}{'User'} = $config1->{'checks'}{'User'}{'oldmetric'};
+$config1->{'cache'}{'Random'} = $config1->{'checks'}{'Random'}{'oldmetric'};
 

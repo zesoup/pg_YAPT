@@ -56,32 +56,46 @@ sub fillwith {
     return $out;
 }
 
-sub getMD5ofFile{
-my $file = shift;
-open( my $FILE, $file );
+sub getMD5ofFile {
+    my $file = shift;
+    open( my $FILE, $file );
     binmode($FILE);
-    my $output =  Digest::MD5->new->addfile($FILE)->hexdigest ;
+    my $output = Digest::MD5->new->addfile($FILE)->hexdigest;
     close($FILE);
-return $output;
+    return $output;
 }
-
 
 sub reloadConf {
     my $configfile = shift;
-    my $config1 = undef;
+    my $config1    = undef;
 
-    if ( exists $config->{DB} ){$config->{DB}->{dbh}->disconnect;}
+    if ( exists $config->{DB} ) { $config->{DB}->{dbh}->disconnect; }
     eval( read_file($configfile) or die "could not read config" )
-      or die "could not parse config";    
+      or die "could not parse config";
 
     if ($config1) {
         $config = $config1;
     }
+    else {
+        opendir my $checkdir,
+          "checks" || die "Can't open check-directory: $!\n";
+        while ( my $f = readdir $checkdir ) {
+            my $checks;
+            if ( $f =~ /^\.+/ )  {next; }
+            eval(
+                read_file("checks/$f")
+                  or die "could not read checks"
+            ) or die "could not parse checks";
+            $config->{checks} = $checks;
 
-    
-    unless ( exists $config->{magicnumber}){
-    $config->{magicnumber} = getMD5ofFile( $configfile );}
-    
+        }
+        closedir $checkdir;
+    }
+
+   # unless ( exists $config->{magicnumber} ) {
+   #     $config->{magicnumber} = getMD5ofFile($configfile);
+   # }
+
     $config->{DB} = pg_dbi::new( config => $config );
 
     foreach my $key ( keys %{ $config->{checks} } ) {
@@ -102,8 +116,8 @@ sub reloadConf {
         $config->{checks}->{$key}->{config} = $config;
     }
 
-#    $config->{UI}->{wall}->{hashsize} =
-#      @{$config->{UI}->{wall}->{checks}};
+    #    $config->{UI}->{wall}->{hashsize} =
+    #      @{$config->{UI}->{wall}->{checks}};
     return $config;
 }
 
@@ -127,15 +141,15 @@ sub checkAndReloadConfig {
     #  }
 }
 
-sub stampbegin{
-my ($obj) = @_;
-$obj->{initstamp}= gettimeofday();
-return;
+sub stampbegin {
+    my ($obj) = @_;
+    $obj->{initstamp} = gettimeofday();
+    return;
 }
 
-sub stampend{
-my ($obj) = @_;
-$obj->{endstamp} =  gettimeofday();
+sub stampend {
+    my ($obj) = @_;
+    $obj->{endstamp} = gettimeofday();
 }
 
 1;

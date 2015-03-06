@@ -42,11 +42,11 @@ sub main {
     $utils::configFile = $configFile;
     utils::checkAndReloadConfig();
     if ($reattachable) {
-	my $configMagic = $utils::config->{magicnumber};
+	#my $configMagic = $utils::config->{magicnumber};
         $utils::configFile = $cacheFile;
         utils::checkAndReloadConfig();
-        if ( $configMagic ne $utils::config->{magicnumber} )
-        {die "Config and Cache Magics dont match!";}
+        #if ( $configMagic ne $utils::config->{magicnumber} )
+        #{die "Config and Cache Magics dont match!";}
 
         $utils::configFile = $configFile;
         $utils::config->{Reattachable} = 1;
