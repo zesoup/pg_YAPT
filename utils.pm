@@ -24,7 +24,7 @@ sub cacheConfig {
     $Data::Dumper::Sortkeys = sub {
         my $out = [];
         foreach ( keys %{ $_[0] } ) {
-            unless ( $_ eq 'dbi' ) { push( @{$out}, $_ ) }
+            unless ( $_ eq 'DB' ) { push( @{$out}, $_ ) }
         }
         return $out;
     };
@@ -35,13 +35,9 @@ sub cacheConfig {
 
 sub widen {
     my ( $totalWidth, $text, $cnt, $extra, $char ) = @_;
-    #unless ($text) { $text = "n/a"; }
     my $textwidth = length($text) + $extra;        #for |seperator
     my $widthper  = floor( $totalWidth / $cnt );
 
-    #if ($textwidth % 2){$textwidth++};
-    #say floor($totalWidth/$cnt)-$textwidth ." ";
-    #say(( ($totalWidth/$cnt)-$textwidth )/2.0 ). " ";
     my $out =
         fillwith( $char, floor( ( $widthper / 2 - $textwidth / 2 ) ) )
       . $text
@@ -72,14 +68,11 @@ return $output;
 
 sub reloadConf {
     my $configfile = shift;
-
-    #    my $config;
     my $config1 = undef;
-    if ( exists $config->{dbi} ){$config->{dbi}->{dbh}->disconnect;}
+
+    if ( exists $config->{DB} ){$config->{DB}->{dbh}->disconnect;}
     eval( read_file($configfile) or die "could not read config" )
       or die "could not parse config";    
-    #do $configfile or die "Cant load Config";
-    #require ($configfile);
 
     if ($config1) {
         $config = $config1;
@@ -89,7 +82,7 @@ sub reloadConf {
     unless ( exists $config->{magicnumber}){
     $config->{magicnumber} = getMD5ofFile( $configfile );}
     
-    $config->{dbi} = pg_dbi::new( config => $config );
+    $config->{DB} = pg_dbi::new( config => $config );
 
     foreach my $key ( keys %{ $config->{checks} } ) {
         require "plugins/" . $config->{checks}->{$key}->{plugin} . ".pm"
@@ -109,8 +102,8 @@ sub reloadConf {
         $config->{checks}->{$key}->{config} = $config;
     }
 
-    $config->{UI}->{wall}->{hashsize} =
-      @{$config->{UI}->{wall}->{checks}};
+#    $config->{UI}->{wall}->{hashsize} =
+#      @{$config->{UI}->{wall}->{checks}};
     return $config;
 }
 

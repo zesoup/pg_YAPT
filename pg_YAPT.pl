@@ -11,6 +11,9 @@ use utils;
 
 use Getopt::Long;
 
+
+$SIG{HUP} = sub { utils::checkAndReloadConfig(); return; };
+
 sub main {
 
     # setup my defaults

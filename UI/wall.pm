@@ -8,6 +8,8 @@ use POSIX;
 use Term::ANSIColor;
 use utils;
 
+$SIG{INT} = sub {unlink "pid"; exit "sigint";};
+
 sub new {
     my (%params) = @_;
     my $self = { config => $params{config} };
@@ -18,16 +20,24 @@ sub new {
 }
 
 sub loop {
-    my ($obj) = @_;
+    open my $pidFH, ">", "pid";
+    print $pidFH $$;
+    close $pidFH;
+    my ($obj,$config) = @_; my $pack =  __PACKAGE__;
+    $obj->{hashsize} =
+      @{$config->{UI}->{$pack}->{checks}};
+
+
     while (1) {
+if ( $config->{magicnumber} ne $utils::config->{magicnumber}){ return "continue";}
         my $linestart = gettimeofday;
         my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
 
         my $line = "\n";
-        if ( utils::checkAndReloadConfig() ) {
-            $line .= utils::widen( $wchar, "New Config!", 1, 0, " " ) . "\n";
-            return "continue";
-        }
+       # if ( utils::checkAndReloadConfig() ) {
+       #     $line .= utils::widen( $wchar, "New Config!", 1, 0, " " ) . "\n";
+       #     return "continue";
+       # }
         my $config = $utils::config;
         $config->{dbh}->{worsttime} = 0;
         unless ( exists $config->{main}->{i} ) { $config->{main}->{i} = 0; }
@@ -35,7 +45,7 @@ sub loop {
             foreach ( @{$obj->{checks}} ) {
                $line .= color("Green")
                   . utils::widen( $wchar, $_,
-                    $obj->{hashsize}, 0, "▔" );
+                    $obj->{hashsize}, 0, " " );
             }
             $line .= "\n";
             $line .= utils::fillwith( "▔", $wchar ) . "\n" . color("reset");
@@ -47,7 +57,7 @@ sub loop {
             
               my $currentCheck =
               $config->{checks}->{ $_ };
-            if (( ++$i != 1)and($i-1 != $obj->{hashsize} ) ) { $line .= color("yellow") . '│' . color("reset"); }
+            if (( ++$i != 1)and($i-1 != $obj->{hashsize} ) ) { $line .= color("bright_yellow") . '│' . color("reset"); }
             $currentCheck->execute();
             my $tup    = $currentCheck->{returnVal};
 	    #my $tup = [ ceil(1000*($currentCheck->{endstamp} - $currentCheck->{initstamp}) )."ms",0];
@@ -66,9 +76,9 @@ sub loop {
         }
         #print $line;
         $| = 1;
-	$utils::config->{dbi}->{dbh}->commit;
+	$utils::config->{DB}->{dbh}->commit;
         my $timetosleep = ($obj->{updatetime}- (gettimeofday-$linestart)*1000000);
-        if ($timetosleep<0){print "\n Queries take to long!"; $timetosleep=0;}
+        if ($timetosleep<0){print "\n Queries take too long!"; $timetosleep=0;}
         usleep $timetosleep;
     }
 

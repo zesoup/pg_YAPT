@@ -8,14 +8,16 @@ use DBI;
 
 sub new {
     my (%params) = @_;
-    my $self = { config => $params{config} };
+    $params{config}->{DB}= {}; #clear last connection (if exists)
+    my $self = $params{config}->{DB};
+	$self->{ config } =$params{config};
     bless( $self, __PACKAGE__ );
-    $self->{dbh} = init();
+    $self->{dbh} = init($params{config}->{database}); #push database - there are the configs
     return $self;
 }
 
 sub init {
-    my $dbh = DBI->connect( 'DBI:Pg:host=127.0.0.1;dbname=postgres', "", "" )
+    my $dbh = DBI->connect( 'DBI:Pg:'.$_[0]->{connection}, "", "" )
        or die "Couldn't connect to Database";
     $dbh->{AutoCommit}=0;
     $dbh->{ReadOnly}=1;
@@ -32,11 +34,11 @@ sub returnAndStore {
 
     my $out = $stm->fetchall_arrayref() or die "could not fetcgh array";
     my ( $ends, $endms ) = gettimeofday;
-    unless ( exists $config->{config}->{dbh}->{worsed} ) {
-        $config->{config}->{dbh}->{worsed} = 0;
+    unless ( exists $config->{config}->{DB}->{worsed} ) {
+        $config->{config}->{DB}->{worsed} = 0;
     }
-    if ( $config->{config}->{dbh}->{worsed} < $endms - $startms ) {   # SECONDS!
-        $config->{config}->{dbh}->{worsed} = $endms - $startms;
+    if ( $config->{config}->{DB}->{worsed} < $endms - $startms ) {   # SECONDS!
+        $config->{config}->{DB}->{worsed} = $endms - $startms;
     }
 
     $config->{config}->{cache}->{$cachename} = $out;

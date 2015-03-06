@@ -20,7 +20,7 @@ sub execute {
 
     utils::stampbegin($obj);
     $obj->{metric} =
-      $obj->{config}->{dbi}->returnAndStore( $obj->{query}, $obj->{name} );
+      $obj->{config}->{DB}->returnAndStore( $obj->{query}, $obj->{name} );
     unless ( exists $obj->{oldmetric} ) {
         $obj->{oldmetric} = $obj->{metric};
     }
