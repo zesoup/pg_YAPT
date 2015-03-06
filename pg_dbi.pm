@@ -3,7 +3,7 @@ use warnings;
 use 5.20.1;
 
 package pg_dbi;
-use Time::HiRes qw (gettimeofday);
+use Time::HiRes qw (gettimeofday usleep);
 use DBI;
 
 sub new {
@@ -31,8 +31,8 @@ sub returnAndStore {
     my ( $starts, $startms ) = gettimeofday;
     my $attempts = 0;
     RETRY:
-    if($attempts >=3){die "could not reestablish";};
-    if($attempts){#sleep(1);
+    if($attempts >=10){die "could not reestablish";};
+    if($attempts){usleep(250000);
 		$config->{dbh}= init($config->{config}->{database});
     }
 
@@ -41,7 +41,7 @@ sub returnAndStore {
     my $stm = $config->{dbh}->prepare($query) or goto RETRY;
     $stm->execute() or goto RETRY;
 
-    my $out = $stm->fetchall_arrayref() or die "could not fetch array";
+    my $out = $stm->fetchall_arrayref() or goto RETRY;
     my ( $ends, $endms ) = gettimeofday;
     unless ( exists $config->{config}->{DB}->{worsed} ) {
         $config->{config}->{DB}->{worsed} = 0;

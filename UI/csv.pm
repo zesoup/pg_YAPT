@@ -21,7 +21,7 @@ sub new {
 sub loop {
     my ( $obj, $config ) = @_;
     my $output;
-    my $separator = ',';
+    my $separator = ';';
     my $minRuns = 1; #Unless we use subtractions, a single run is sufficient.
                      #If there are subtractions(or deltas), run twice
 for (my $i=0; $i < $minRuns; $i++){

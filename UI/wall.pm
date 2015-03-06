@@ -65,8 +65,8 @@ if ( $config->{magicnumber} ne $utils::config->{magicnumber}){ return "continue"
             my $unit = $currentCheck->{units}[0] or "";
             my $status = $tup->[1];
             my $clr    = "White";
-            if    ( $status == 1 ) { $clr = "Yellow"; }
-            elsif ( $status >= 2 ) { $clr = "Red"; }
+            if    ( int($status) >= 1 ) { $clr = "Yellow"; }
+            if    ( int($status) >= 2 ) { $clr = "Red"; }
 
             $line .=
                 color($clr)

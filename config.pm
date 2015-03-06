@@ -3,7 +3,7 @@ $config = {
     #Main Information and Params
     version  => "2.0",
     database => {
-        connection => "host=localhost;dbname=postgres;application_name=pg_YAPT"
+        connection => "host=127.0.0.1;dbname=postgres;application_name=pg_YAPT"
     },
     defaultui => 'wall',
 
@@ -41,7 +41,7 @@ $config = {
             plugin => "querycheck"
         },
         "WAL" => {
-            query   => "select pg_current_xlog_location();",
+            query   => "select pg_current_xlog_location(), pg_xlogfile_name(pg_current_xlog_location() );",
             isDelta => 1,
             plugin  => "querycheck",
             units   => ["MB"],
@@ -50,8 +50,12 @@ $config = {
                     hex( substr( $_[0]->{metric}->[0][0], 2, 10 ) ) -
                       hex( substr( $_[0]->{oldmetric}->[0][0], 2, 10 ) ) ) /
                   ( 1024 * 1024 );
-                return [ sprintf( "%.1f", $walwritten ),
-                    int( $walwritten / 10 ) ];
+                use bigint;
+                my $walfiles = ( hex($_[0]->{metric}->[0][1]) -
+                                 hex($_[0]->{oldmetric}->[0][1]));
+                return [ $walfiles.'|'.sprintf( "%.0f", $walwritten ),
+                  #   ($walwritten / 10)+$walfiles ];
+                   $walfiles];
               }
         },
         'S/I' => {
@@ -64,10 +68,10 @@ $config = {
                 my $total = $SEQ + $IDX;
                 if ( $total <= 0 ) { $total = 1; }
                 return [
-                    '('
-                      . floor( 10 * $SEQ / $total ) . '/'
-                      . floor( 10 * $IDX / $total ) . ')x'
-                      . floor( $total / 1000 ) . 'k',
+                    
+                      floor( 10 * $SEQ / $total ) . '/'
+                      . floor( 10 * $IDX / $total ) . '|'
+                      . ceil( $total / 10000 ) . 'k',
                     0
                 ];
               }
@@ -111,9 +115,9 @@ on true;",
             plugin => "querycheck",
             action => sub {
                 return [
-                    $_[0]->{metric}->[0][0] . '['
-                      . $_[0]->{metric}->[0][1] . ']',
-                    $_[0]->{metric}->[0][1]
+                    $_[0]->{metric}->[0][0] . '/'
+                      . $_[0]->{metric}->[0][1] . '',
+                  floor($_[0]->{metric}->[0][1] / 5) 
                 ];
               }
         },
@@ -141,16 +145,21 @@ on true;",
                 $UPD = floor( 10 * $UPD / $total );
                 $DEL = floor( 10 * $DEL / $total );
                 return [
-                    '('
-                      . $INS . '/'
+                    
+                      $INS . '/'
                       . $UPD . '/'
-                      . $DEL . ')x'
-                      . floor( $total / 1000 ) . 'k',
+                      . $DEL . '|'
+                      . ceil( $total / 10000 ) . 'k',
                     0
                 ];
               }
 
         },
+        'SIZE' =>{
+       query=> "select round(sum(pg_database_size(datname))/(1024*1024*1024),1) from pg_database;",
+       plugin=> "querycheck",
+       units=>["GB",]
+         },
         'RTupI' => {
             query =>
 "select sum( coalesce(idx_tup_fetch,0)+coalesce(idx_tup_read,0) ) from pg_stat_user_indexes",
@@ -196,10 +205,10 @@ on true;",
 
     UI => {
         wall => {
-            updatetime => 100000,    #ns
+            updatetime => 1000000,    #ns
             checks     => [
-                "PID","User",    "RTupT", "RTupI",   "WAL",   "txID", "BlkAcc",
-                "TotRows", "Locks", "AnlzAge", "I/U/D", "S/I"
+                "User",  "WAL",   "txID", "BlkAcc","SIZE",
+                "TotRows", "Locks","RTupT", "RTupI", "I/U/D", "S/I"
             ]
         },
         json => {
