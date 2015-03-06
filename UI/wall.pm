@@ -78,7 +78,7 @@ if ( $config->{magicnumber} ne $utils::config->{magicnumber}){ return "continue"
         $| = 1;
 	$utils::config->{DB}->{dbh}->commit;
         my $timetosleep = ($obj->{updatetime}- (gettimeofday-$linestart)*1000000);
-        if ($timetosleep<0){print "\n Queries take too long!"; $timetosleep=0;}
+        if ($timetosleep<0){print STDERR "\n Queries take too long!"; $timetosleep=0;}
         usleep $timetosleep;
     }
 

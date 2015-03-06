@@ -21,18 +21,27 @@ sub init {
        or die "Couldn't connect to Database";
     $dbh->{AutoCommit}=0;
     $dbh->{ReadOnly}=1;
+    $dbh->{destination}=$_[0]->{connection};
     unless ($dbh) { exit(1); }
     return $dbh;
 }
 
 sub returnAndStore {
-
     my ( $config, $query, $cachename ) = @_;
     my ( $starts, $startms ) = gettimeofday;
-    my $stm = $config->{dbh}->prepare($query) or die "could not prepare query";
-    $stm->execute() or die "could not execute ";
+    my $attempts = 0;
+    RETRY:
+    if($attempts >=3){die "could not reestablish";};
+    if($attempts){#sleep(1);
+		$config->{dbh}= init($config->{config}->{database});
+    }
 
-    my $out = $stm->fetchall_arrayref() or die "could not fetcgh array";
+
+    $attempts++;
+    my $stm = $config->{dbh}->prepare($query) or goto RETRY;
+    $stm->execute() or goto RETRY;
+
+    my $out = $stm->fetchall_arrayref() or die "could not fetch array";
     my ( $ends, $endms ) = gettimeofday;
     unless ( exists $config->{config}->{DB}->{worsed} ) {
         $config->{config}->{DB}->{worsed} = 0;

@@ -3,7 +3,7 @@ $config = {
     #Main Information and Params
     version  => "2.0",
     database => {
-        connection => "host=127.0.0.1;dbname=postgres;application_name=pg_YAPT"
+        connection => "host=localhost;dbname=postgres;application_name=pg_YAPT"
     },
     defaultui => 'wall',
 
@@ -32,6 +32,9 @@ $config = {
         hosttime => {
             plugin => "thetime",
         },
+        "PID"   =>{
+        query => "Select pg_backend_pid();",
+        plugin=>"querycheck"},
         "MaxBlt" => {
             query =>
 "select substring(relname,length(relname)-7)||'/'||round((coalesce(n_dead_tup,0)/coalesce(n_live_tup::numeric,1) )*100,0)::text||'%' from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;",
@@ -195,7 +198,7 @@ on true;",
         wall => {
             updatetime => 100000,    #ns
             checks     => [
-                "User",    "RTupT", "RTupI",   "WAL",   "txID", "BlkAcc",
+                "PID","User",    "RTupT", "RTupI",   "WAL",   "txID", "BlkAcc",
                 "TotRows", "Locks", "AnlzAge", "I/U/D", "S/I"
             ]
         },
