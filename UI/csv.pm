@@ -18,15 +18,16 @@ sub new {
 }
 
 sub loop {
-    my ( $obj, $config,$name, $UIopts ) = @_;
+    my ( $obj, $config, $name, $UIopts ) = @_;
     my $output;
     my $separator = ';';
-    my $minRuns   = 1;  #Unless we use subtractions, a single run is sufficient.
-                        #If there are subtractions(or deltas), run twice
-    for ( my $i = 0 ; $i < $minRuns ; $i++ ) {
+    my $loopagain = -1;    # Unless we use deltas a single run is sufficient.
+                           # If there are deltas run twice
+                           # If asked to via opt - run forever.
+                           # set to -1 on init to identify the first run
+    do {
         $output = '';
-
-        if ( $UIopts eq "header" ) {
+        if ( ( $loopagain == -1 ) and ( $UIopts =~ "header" ) ) {
             foreach ( @{ $obj->{checks} } ) {
                 unless ( $output eq "" ) {
                     $output .= $separator;
@@ -34,28 +35,38 @@ sub loop {
                 $output .= $_;
             }
             $output .= "\n";
+            print $output;
+            $output = '';
         }
+        $loopagain = 0;
 
-        if ( ( $minRuns > 1 ) and ( exists $obj->{updatetime} ) ) {
-            usleep $obj->{updatetime};
-        }
         my $firstcheck = 0;
         foreach ( @{ $obj->{checks} } ) {
             my $currentCheck = $config->{checks}->{$_};
             if (    ( $currentCheck->{isDelta} )
                 and ( not exists $currentCheck->{oldmetric} ) )
             {
-                $minRuns = 2;
+                $loopagain = 1;
             }
             $currentCheck->execute();
             my $tup = $currentCheck->{returnVal};
             if ( $firstcheck++ ) { $output .= $separator; }
-            $output .= $tup->[0].$currentCheck->{units}[0];
+            $output .= $tup->[0] . $currentCheck->{units}[0];
         }
-    }
-    if ( $config->{Reattachable} == 1 ) { utils::cacheConfig($config); }
-    say $output;
 
+        unless ($loopagain) { say $output; }
+
+        #at this point, loopagain is only set if current values are not valid.
+
+        if ( $config->{Reattachable} == 1 ) { utils::cacheConfig($config); }
+
+        if ( $UIopts =~ "repeat" ) { $loopagain = 1 }
+
+        if ( ($loopagain) and ( exists $obj->{updatetime} ) ) {
+            usleep $obj->{updatetime};
+        }
+
+    } while ($loopagain);
 }
 
 1;
