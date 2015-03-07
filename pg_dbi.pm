@@ -8,34 +8,47 @@ use DBI;
 
 sub new {
     my (%params) = @_;
-    $params{config}->{DB}= {}; #clear last connection (if exists)
+    $params{config}->{DB} = {};    #clear last connection (if exists)
     my $self = $params{config}->{DB};
-	$self->{ config } =$params{config};
+    $self->{config} = $params{config};
     bless( $self, __PACKAGE__ );
-    $self->{dbh} = init($params{config}->{database}); #push database - there are the configs
+    if ( $self->{config}->{tests} ) { $self->{tests} = 1; }
+    else {
+        $self->{dbh} = init( $params{config}->{database} )
+          ;                        #push database - there are the configs
+    }
     return $self;
 }
 
 sub init {
-    my $dbh = DBI->connect( 'DBI:Pg:'.$_[0]->{connection}, "", "" )
-       or die "Couldn't connect to Database";
-    $dbh->{AutoCommit}=0;
-    $dbh->{ReadOnly}=1;
-    $dbh->{destination}=$_[0]->{connection};
+    my $dbh = DBI->connect( 'DBI:Pg:' . $_[0]->{connection}, "", "" )
+      or die "Couldn't connect to Database";
+    $dbh->{AutoCommit}  = 0;
+    $dbh->{ReadOnly}    = 1;
+    $dbh->{destination} = $_[0]->{connection};
     unless ($dbh) { exit(1); }
     return $dbh;
+}
+
+sub commit {
+    unless ( $_[0]->{tests} ) { $_[0]->{dbh}->commit; }
 }
 
 sub returnAndStore {
     my ( $config, $query, $cachename ) = @_;
     my ( $starts, $startms ) = gettimeofday;
-    my $attempts = 0;
-    RETRY:
-    if($attempts >=10){die "could not reestablish";};
-    if($attempts){usleep(250000);
-		$config->{dbh}= init($config->{config}->{database});
+    if ( exists $config->{tests} ) {
+        my $output = [ [0] ];
+        $output = $config->{config}->{checks}->{$cachename}->{querytest};
+        return $output;
     }
-
+    my $attempts = 0;
+  RETRY:
+    if ( $attempts >= 10 ) { die "could not reestablish"; }
+    if ($attempts) {
+        usleep(250000);
+        $config->{dbh} = init( $config->{config}->{database} );
+    }
 
     $attempts++;
     my $stm = $config->{dbh}->prepare($query) or goto RETRY;
@@ -46,7 +59,7 @@ sub returnAndStore {
     unless ( exists $config->{config}->{DB}->{worsed} ) {
         $config->{config}->{DB}->{worsed} = 0;
     }
-    if ( $config->{config}->{DB}->{worsed} < $endms - $startms ) {   # SECONDS!
+    if ( $config->{config}->{DB}->{worsed} < $endms - $startms ) {    # SECONDS!
         $config->{config}->{DB}->{worsed} = $endms - $startms;
     }
 

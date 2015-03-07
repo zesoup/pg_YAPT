@@ -26,12 +26,14 @@
         },
         "PID" => {
             query  => "Select pg_backend_pid();",
-            plugin => "querycheck"
+            plugin => "querycheck",
+            querytest=>[[1234]]
         },
         "MaxBlt" => {
             query =>
 "select substring(relname,length(relname)-7)||'/'||round((coalesce(n_dead_tup,0)/coalesce(n_live_tup::numeric,1) )*100,0)::text||'%' from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;",
-            plugin => "querycheck"
+            plugin => "querycheck",
+            querytest=>[["_tellers/50%"]]
         },
         "WAL" => {
             query =>
@@ -39,6 +41,7 @@
             isDelta => 1,
             plugin  => "querycheck",
             units   => ["MB"],
+            querytest=> [["6/8FA66AE0","00000001000000060000008F"]],
             action  => sub {
                 my $walwritten = (
                     hex( substr( $_[0]->{metric}->[0][0], 2, 10 ) ) -
@@ -49,8 +52,6 @@
                     hex( substr($_[0]->{oldmetric}->[0][1],17,23 ) ) );
                 return [
                     $walfiles . '|' . sprintf( "%.0f", $walwritten ),
-
-                    #   ($walwritten / 10)+$walfiles ];
                     $walfiles
                 ];
               }
@@ -59,6 +60,7 @@
             query =>
               "select sum(seq_scan), sum(idx_scan) from pg_stat_user_tables;",
             plugin => "querycheck",
+            querytest => [[0,0]],
             action => sub {
                 my $SEQ = $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
                 my $IDX = $_[0]->{metric}->[0][1] - $_[0]->{oldmetric}->[0][1];
@@ -77,21 +79,22 @@
         'txID' => {
             query  => "select txid_current();",
             plugin => "querycheck",
+            querytest => [[0]],
             action => sub {
                 return [ $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0],
                     0 ];
               }
         },
         TheTime => {
-
-      #            query  => "select to_char(current_timestamp, 'HH24:MI:SS');",
             query =>
 "SELECT floor(extract(epoch from  now() - pg_postmaster_start_time() ))",
-            plugin => "querycheck"
+            plugin => "querycheck",
+            querytest=>[[0]]
         },
         "TotRows" => {
             query  => "select sum(coalesce(reltuples,0) ) from pg_class;",
             plugin => "querycheck",
+            querytest => [[0]],
             units  => ["m"],
             action => sub {
                 return [ sprintf( "%.1f", $_[0]->{metric}->[0][0] / 1000000 ),
@@ -100,7 +103,8 @@
         },
         User => {
             query  => "select count(*) from pg_stat_activity;",
-            plugin => "querycheck"
+            plugin => "querycheck",
+            querytest=>[[0]],
         },
         Locks => {
             query => "
@@ -110,6 +114,7 @@ join
 (select count(*) from pg_locks where not granted) as notgranted 
 on true;",
             plugin => "querycheck",
+            querytest=>[[0,0]],
             action => sub {
                 return [
                     $_[0]->{metric}->[0][0] . '/'
@@ -123,6 +128,7 @@ on true;",
 "select sum( coalesce(idx_tup_fetch,0)+coalesce(seq_tup_read,0) )  from pg_stat_user_tables ",
             plugin => "querycheck",
             units  => [""],
+            querytest => [[0]],
             action => sub {
                 my $TBL = $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
                 return [ floor( $TBL / 1.0 ), 0 ];
@@ -132,6 +138,7 @@ on true;",
             query =>
 "select sum(tup_returned), sum(tup_fetched), sum(tup_inserted), sum(tup_updated), sum(tup_deleted) from pg_stat_database;",
             plugin => "querycheck",
+            querytest => [[0,0,0,0,0]],
             action => sub {
                 my $INS = $_[0]->{metric}->[0][2] - $_[0]->{oldmetric}->[0][2];
                 my $UPD = $_[0]->{metric}->[0][3] - $_[0]->{oldmetric}->[0][3];
@@ -156,6 +163,7 @@ on true;",
             query =>
 "select round(sum(pg_database_size(datname))/(1024*1024*1024),1) from pg_database;",
             plugin => "querycheck",
+            querytest => [[0]],
             units  => [ "GB", ]
         },
         'RTupI' => {
@@ -163,6 +171,7 @@ on true;",
 "select sum( coalesce(idx_tup_fetch,0)+coalesce(idx_tup_read,0) ) from pg_stat_user_indexes",
             plugin => "querycheck",
             units  => [""],
+            querytest => [[0]],
             action => sub {
                 my $IDX = $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
                 return [ floor( $IDX / 1.0 ), 0 ];
@@ -171,18 +180,21 @@ on true;",
         'AnlzAge' => {
             query =>
 "select extract(epoch from now() -min(last_analyze))::integer from pg_stat_user_tables ;",
-            plugin => "querycheck"
-
+            plugin => "querycheck",
+            querytest => [[0]]
         },
         'Random' => {
             query  => 'select random()*20',
-            plugin => "querycheck"
+            plugin => "querycheck",
+            querytest => [[0]]
+
         },
         'BlkAcc' => {
             query =>
 "select sum( coalesce(heap_blks_read,0)+coalesce(heap_blks_hit,0)+coalesce( idx_blks_hit, 0)+coalesce( idx_blks_hit, 0)+ coalesce(toast_blks_read, 0)+coalesce(toast_blks_hit,0)+coalesce(tidx_blks_hit,0)+coalesce(tidx_blks_hit,0) ) as reads from pg_statio_user_tables ;",
             plugin => "querycheck",
             units  => ["MB"],
+            querytest => [[0]],
             action => sub {
                 return [
                     sprintf(

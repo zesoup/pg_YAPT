@@ -34,10 +34,6 @@ sub loop {
         }
         my $linestart = gettimeofday;
         my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
-        # if ( utils::checkAndReloadConfig() ) {
-        #     $line .= utils::widen( $wchar, "New Config!", 1, 0, " " ) . "\n";
-        #     return "continue";
-        # }
         my $config = $utils::config;
         $config->{dbh}->{worsttime} = 0;
         unless ( exists $config->{main}->{i} ) { $config->{main}->{i} = 0; }
@@ -48,7 +44,6 @@ sub loop {
             }
             $line .= "\n";
 
-            #$line .= utils::fillwith( "▔", $wchar ) . "\n" . color("reset");
             print $line;
             $line = "";
         }
@@ -80,7 +75,8 @@ sub loop {
         }
         $line = "\n";
         $| = 1;
-        $utils::config->{DB}->{dbh}->commit;
+        
+        $utils::config->{DB}->commit;
         my $timetosleep =
           ( $obj->{updatetime} - ( gettimeofday- $linestart ) * 1000000 );
         if ( $timetosleep < 0 ) {

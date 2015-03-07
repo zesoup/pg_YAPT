@@ -2,6 +2,7 @@ $config = {
 
     #Main Information and Params
     version  => "2.0",
+    tests => 1,
     database => {
         connection => "host=127.0.0.1;dbname=postgres;application_name=pg_YAPT"
     },

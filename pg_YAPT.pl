@@ -72,7 +72,6 @@ sub main {
         $utils::configFile = $opt->{config};
         $utils::config->{Reattachable} = 1;
     }
-
     # config is now loaded. check if there's an override for the UI.
     # If not, reset the $opt->{ui} value with the default.
     unless ( exists $opt->{ui} ) { $opt->{ui} = $utils::config->{defaultui}; }
