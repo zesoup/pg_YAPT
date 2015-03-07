@@ -18,7 +18,7 @@ sub new {
 }
 
 sub loop {
-    my ( $obj, $config, $UIopts ) = @_;
+    my ( $obj, $config,$name, $UIopts ) = @_;
     my $output;
     my $separator = ';';
     my $minRuns   = 1;  #Unless we use subtractions, a single run is sufficient.

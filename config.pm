@@ -5,20 +5,30 @@ $config = {
     database => {
         connection => "host=127.0.0.1;dbname=postgres;application_name=pg_YAPT"
     },
-    defaultui => 'wall',
+    defaultui => 'default',
 
     # Boards are output-modules.
     # e.g. printf-output, curses or JSON.
 
     UI => {
-        wall => {
+        default => {
+            template => "wall",
             updatetime => 1000000,    #ns
             checks     => [
                 "User",  "WAL",   "txID", "BlkAcc","SIZE",
                 "TotRows", "Locks","RTupT", "RTupI", "Locks", "TheTime"
             ]
         },
+        wlusers => {
+            template => "wall",
+            updatetime => 1000000,    #ns
+            checks     => [
+                "User", "txID", 
+                "Locks"
+            ]
+        },
         json => {
+            template=>"json",
             updatetime => 1000000,
             checks     => [
                 "Random", "WAL",    "User",    "TheTime",
@@ -27,6 +37,7 @@ $config = {
             ]
         },
         csv=> {
+            template=>"csv",
             updatetime => 1000000,
             checks     => [
                 "TotRows", "WAL",    "User",    "TheTime",
@@ -36,6 +47,7 @@ $config = {
         },
 
         curses => {
+            template=>"curses",
             checks => [ "TheTime", "User", "MaxBlt" ]
           }
 

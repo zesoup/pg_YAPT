@@ -8,7 +8,7 @@ use POSIX;
 use Term::ANSIColor;
 use utils;
 
-$SIG{INT} = sub {unlink "pid"; exit "sigint";};
+$SIG{INT} = sub { unlink "pid"; exit "sigint"; };
 
 sub new {
     my (%params) = @_;
@@ -23,62 +23,70 @@ sub loop {
     open my $pidFH, ">", "pid";
     print $pidFH $$;
     close $pidFH;
-    my ($obj,$config) = @_; my $pack =  __PACKAGE__;
+    my ( $obj, $config, $name, $opts ) = @_;
+    my $pack = $name;
     $obj->{hashsize} =
-      @{$config->{UI}->{$pack}->{checks}};
-
-
+      @{ $config->{UI}->{$pack}->{checks} };
+    my $line = "";
     while (1) {
-if ( $config->{magicnumber} ne $utils::config->{magicnumber}){ return "continue";}
+        if ( $config->{magicnumber} ne $utils::config->{magicnumber} ) {
+            return "continue";
+        }
         my $linestart = gettimeofday;
         my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
-
-        my $line = "\n";
-       # if ( utils::checkAndReloadConfig() ) {
-       #     $line .= utils::widen( $wchar, "New Config!", 1, 0, " " ) . "\n";
-       #     return "continue";
-       # }
+        # if ( utils::checkAndReloadConfig() ) {
+        #     $line .= utils::widen( $wchar, "New Config!", 1, 0, " " ) . "\n";
+        #     return "continue";
+        # }
         my $config = $utils::config;
         $config->{dbh}->{worsttime} = 0;
         unless ( exists $config->{main}->{i} ) { $config->{main}->{i} = 0; }
         unless ( $config->{main}->{i}++ % ( $hchar - 2 ) ) {
-            foreach ( @{$obj->{checks}} ) {
-               $line .= color("Green")
-                  . utils::widen( $wchar, $_,
-                    $obj->{hashsize}, 0, " " );
+            foreach ( @{ $obj->{checks} } ) {
+                $line .= color("Green")
+                  . utils::widen( $wchar, $_, $obj->{hashsize}, 0, " " );
             }
             $line .= "\n";
-            $line .= utils::fillwith( "▔", $wchar ) . "\n" . color("reset");
+
+            #$line .= utils::fillwith( "▔", $wchar ) . "\n" . color("reset");
             print $line;
             $line = "";
         }
         my $i = 0;
-        foreach  (@{$obj->{checks}}){
-            
-              my $currentCheck =
-              $config->{checks}->{ $_ };
-            if (( ++$i != 1)and($i-1 != $obj->{hashsize} ) ) { $line .= color("bright_yellow") . '│' . color("reset"); }
+        foreach ( @{ $obj->{checks} } ) {
+
+            my $currentCheck = $config->{checks}->{$_};
+            if ( ( ++$i != 1 ) and ( $i - 1 != $obj->{hashsize} ) ) {
+                $line .= color("bright_yellow") . '│' . color("reset");
+            }
             $currentCheck->execute();
-            my $tup    = $currentCheck->{returnVal};
-	    #my $tup = [ ceil(1000*($currentCheck->{endstamp} - $currentCheck->{initstamp}) )."ms",0];
+            my $tup = $currentCheck->{returnVal};
+
+#my $tup = [ ceil(1000*($currentCheck->{endstamp} - $currentCheck->{initstamp}) )."ms",0];
             my $metric = $tup->[0];
-            my $unit = $currentCheck->{units}[0] or "";
+            my $unit   = $currentCheck->{units}[0] or "";
             my $status = $tup->[1];
             my $clr    = "White";
-            if    ( int($status) >= 1 ) { $clr = "Yellow"; }
-            if    ( int($status) >= 2 ) { $clr = "Red"; }
+            if ( int($status) >= 1 ) { $clr = "Yellow"; }
+            if ( int($status) >= 2 ) { $clr = "Red"; }
 
             $line .=
-                color($clr)
-              . utils::widen( $wchar, $metric.$unit, $obj->{hashsize}, 1, " " )
+              color($clr)
+              . utils::widen( $wchar, $metric . $unit, $obj->{hashsize}, 1,
+                " " )
               . color("reset");
-            print $line; $line = "";
+            print $line;
+            $line = "";
         }
-        #print $line;
+        $line = "\n";
         $| = 1;
-	$utils::config->{DB}->{dbh}->commit;
-        my $timetosleep = ($obj->{updatetime}- (gettimeofday-$linestart)*1000000);
-        if ($timetosleep<0){print STDERR "\n Queries take too long!"; $timetosleep=0;}
+        $utils::config->{DB}->{dbh}->commit;
+        my $timetosleep =
+          ( $obj->{updatetime} - ( gettimeofday- $linestart ) * 1000000 );
+        if ( $timetosleep < 0 ) {
+            print STDERR "\n Queries take too long!";
+            $timetosleep = 0;
+        }
         usleep $timetosleep;
     }
 

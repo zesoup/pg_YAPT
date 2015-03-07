@@ -92,9 +92,6 @@ sub reloadConf {
         closedir $checkdir;
     }
 
-   # unless ( exists $config->{magicnumber} ) {
-   #     $config->{magicnumber} = getMD5ofFile($configfile);
-   # }
 
     $config->{DB} = pg_dbi::new( config => $config );
 
@@ -104,9 +101,9 @@ sub reloadConf {
     }
 
     foreach my $key ( keys %{ $config->{UI} } ) {
-        require "UI/" . $key . ".pm"
+        require "UI/" . $config->{UI}->{ $key }->{template} . ".pm"
           or print "could not load $key";
-        bless( $config->{UI}->{$key}, $key );
+        bless( $config->{UI}->{$key}, $config->{UI}->{$key}->{template} );
     }
 
     foreach my $key ( keys %{ $config->{checks} } ) {
@@ -116,8 +113,6 @@ sub reloadConf {
         $config->{checks}->{$key}->{config} = $config;
     }
 
-    #    $config->{UI}->{wall}->{hashsize} =
-    #      @{$config->{UI}->{wall}->{checks}};
     return $config;
 }
 
