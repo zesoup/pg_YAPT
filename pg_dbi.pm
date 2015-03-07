@@ -5,6 +5,7 @@ use 5.20.1;
 package pg_dbi;
 use Time::HiRes qw (gettimeofday usleep);
 use DBI;
+use utils;
 
 sub new {
     my (%params) = @_;
@@ -12,7 +13,9 @@ sub new {
     my $self = $params{config}->{DB};
     $self->{config} = $params{config};
     bless( $self, __PACKAGE__ );
-    if ( $self->{config}->{tests} ) { $self->{tests} = 1; }
+    if ( $self->{config}->{tests} ) {
+     utils::ErrLog ("Tests Enabled! Will not connect to DB!", "DB", "WARN"); 
+     $self->{tests} = 1; }
     else {
         $self->{dbh} = init( $params{config}->{database} )
           ;                        #push database - there are the configs
@@ -22,7 +25,7 @@ sub new {
 
 sub init {
     my $dbh = DBI->connect( 'DBI:Pg:' . $_[0]->{connection}, "", "" )
-      or die "Couldn't connect to Database";
+     or utils::ErrLog ("Couldnt connect to DB", "DB", "FATAL");# or die "Couldn't connect to Database";
     $dbh->{AutoCommit}  = 0;
     $dbh->{ReadOnly}    = 1;
     $dbh->{destination} = $_[0]->{connection};
@@ -44,13 +47,16 @@ sub returnAndStore {
     }
     my $attempts = 0;
   RETRY:
-    if ( $attempts >= 10 ) { die "could not reestablish"; }
+    if ( $attempts >= $config->{config}->{database}->{maxAttempts} ) { die "could not reestablish connection"; }
     if ($attempts) {
-        usleep(250000);
+        utils::ErrLog("DB-Connection broken!", "DB", "WARN");
+        usleep( $config->{config}->{database}->{reconnectdelay}*1000000 );
+        utils::ErrLog("Trying to reconnect", "DB", "INFO");
         $config->{dbh} = init( $config->{config}->{database} );
     }
 
-    $attempts++;
+    $attempts++; 
+    goto RETRY unless (UNIVERSAL::isa($config->{dbh}, "DBI::db")  );
     my $stm = $config->{dbh}->prepare($query) or goto RETRY;
     $stm->execute() or goto RETRY;
 

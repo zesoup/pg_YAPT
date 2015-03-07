@@ -43,7 +43,7 @@ sub main {
         [ 'config|c=s', "config to use",    { default => "config.pm" } ],
         [ 'cache|C=s',  "cacheFile to use", { default => ".cache.pm" } ],
         [],
-        [ 'verbose|v', "print extra stuff" ],
+        [ 'timing|t=i', "print checktimes longer X to stderr", {default=>-1} ],
         [ 'help|h',    "print usage message and exit" ],
     );
     print( $usage->text ), exit if $opt->help;
@@ -75,10 +75,11 @@ sub main {
     # config is now loaded. check if there's an override for the UI.
     # If not, reset the $opt->{ui} value with the default.
     unless ( exists $opt->{ui} ) { $opt->{ui} = $utils::config->{defaultui}; }
-
+    if ( exists $opt->{timing}){$utils::config->{timing} = $opt->{timing};}
+    
     # Now check if the requested UI actually exists.
     if ( !exists $utils::config->{UI}->{ $opt->{ui} } ) {
-        say STDERR "Unknown UI:" . $opt->{ui};
+        utils::ErrLog ("Unknown UI:" . $opt->{ui}, "main", "FATAL");
     }
     # If the UI dosnt exist, OR if we're asked to list all possible UIs
     # print all UIs.
@@ -99,7 +100,7 @@ sub main {
     # when done - exit.
     while ( $utils::config->{UI}->{ $opt->{ui} }
         ->loop( $utils::config, $opt->{ui}, $opt->{uiopts} ) eq "continue" )
-    {say STDERR "ui terminated but asks for a restart";
+    {utils::ErrLog "ui terminated but asks for a restart", "main", "INFO";
     }
 
     return 0;

@@ -2,8 +2,10 @@ $config = {
 
     #Main Information and Params
     version  => "2.0",
-    tests => 1,
+    tests => 0,
     database => {
+        maxAttempts=> 9999999,
+        reconnectdelay=> 0.5,
         connection => "host=127.0.0.1;dbname=postgres;application_name=pg_YAPT"
     },
     defaultui => 'default',
@@ -14,9 +16,9 @@ $config = {
     UI => {
         default => {
             template => "wall",
-            updatetime => 1000000,    #ns
+            updatetime => 100000,    #ns
             checks     => [
-                "MaxBlt",  "WAL",   "txID", "BlkAcc","SIZE",
+                "WAL",   "txID", "BlkAcc","SIZE",
                 "TotRows", "Locks","RTupT", "RTupI", "Locks", "TheTime"
             ]
         },

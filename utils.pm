@@ -13,6 +13,7 @@ use Time::HiRes qw(usleep gettimeofday);
 
 our $configFile;
 our $config;
+our $configAge;
 
 sub cacheConfig {
     open my $FH, ">", ".cache.pm";
@@ -89,6 +90,7 @@ sub reloadConf {
     if ( exists $config->{DB} ) { $config->{DB}->{dbh}->disconnect; }
 
     # read the configurationfile.(or cache for that matter)
+    $configAge = localtime;
     eval( read_file($configfile) or die "could not read config" )
       or die "could not parse config";
 
@@ -165,6 +167,11 @@ sub stampbegin {
 sub stampend {
     my ($obj) = @_;
     $obj->{endstamp} = gettimeofday();
+}
+
+sub ErrLog{
+my ($msg, $sender, $type)=@_;
+say STDERR "[".localtime."]".$type." ".$sender.":".$msg;
 }
 
 1;

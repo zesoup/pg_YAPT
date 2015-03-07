@@ -13,7 +13,6 @@ $SIG{INT} = sub { unlink "pid"; exit "sigint"; };
 sub new {
     my (%params) = @_;
     my $self = { config => $params{config} };
-
     bless( $self, __PACKAGE__ );
     return $self;
 
@@ -25,12 +24,14 @@ sub loop {
     close $pidFH;
     my ( $obj, $config, $name, $opts ) = @_;
     my $pack = $name;
+    my $configAge = $utils::configAge;
+
     $obj->{hashsize} =
       @{ $config->{UI}->{$pack}->{checks} };
     my $line = "";
     while (1) {
-        if ( $config->{magicnumber} ne $utils::config->{magicnumber} ) {
-            return "continue";
+        if ( $configAge ne $utils::configAge ) {
+           return "continue";
         }
         my $linestart = gettimeofday;
         my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
@@ -57,7 +58,6 @@ sub loop {
             $currentCheck->execute();
             my $tup = $currentCheck->{returnVal};
 
-#my $tup = [ ceil(1000*($currentCheck->{endstamp} - $currentCheck->{initstamp}) )."ms",0];
             my $metric = $tup->[0];
             my $unit   = $currentCheck->{units}[0] or "";
             my $status = $tup->[1];
@@ -80,7 +80,7 @@ sub loop {
         my $timetosleep =
           ( $obj->{updatetime} - ( gettimeofday- $linestart ) * 1000000 );
         if ( $timetosleep < 0 ) {
-            print STDERR "\n Queries take too long!";
+            utils::ErrLog ("Queries take too long for loop!", "WALL", "WARN");
             $timetosleep = 0;
         }
         usleep $timetosleep;
