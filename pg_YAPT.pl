@@ -21,8 +21,7 @@ $SIG{HUP} = sub { utils::checkAndReloadConfig(); return; };
 
 sub main {
 
-    # setup default values for opts.
-
+    #  Setup the argument parser.
     my ( $opt, $usage ) = describe_options(
         "Usage: pg_YAPT [opts]",
         [],
@@ -49,14 +48,24 @@ sub main {
     );
     print( $usage->text ), exit if $opt->help;
 
-    if ($opt->{deletecache}) {
-               unlink $opt->{cache}; 
-		}
+    # delete the cachefile if asked to
+    # doesnt rely on the config, so we can do it very early on
+    if ( $opt->{deletecache} ) {
+        unlink $opt->{cache};
+    }
 
+    # now handle the Config.
+    # reset the utils::config, set the targetfiles properly and force a reload.
     $utils::config     = undef;
     $utils::configFile = $opt->{config};
     utils::checkAndReloadConfig();
-    if ($opt->{reattachable}) {
+
+    # if we're asked to be reattachable reset the targetfile to cache and load again.
+    # because the contents may be blessed, we need to load the defaultconfig first to make
+    # sure all includes allready exist.
+    #
+    # once done, reset the targetfile again to provide proper reload-functionality on sighup.
+    if ( $opt->{reattachable} ) {
         $utils::configFile = $opt->{cache};
         utils::checkAndReloadConfig();
 
@@ -64,26 +73,43 @@ sub main {
         $utils::config->{Reattachable} = 1;
     }
 
-    my $config = $utils::config;
+    # config is now loaded. check if there's an override for the UI.
+    # If not, reset the $opt->{ui} value with the default.
     unless ( exists $opt->{ui} ) { $opt->{ui} = $utils::config->{defaultui}; }
-    if ( !exists $config->{UI}->{ $opt->{ui} } ) {
+
+    # Now check if the requested UI actually exists.
+    if ( !exists $utils::config->{UI}->{ $opt->{ui} } ) {
         say STDERR "Unknown UI:" . $opt->{ui};
     }
-    if ( ( !exists $config->{UI}->{ $opt->{ui} } ) or ( $opt->{listui} ) ) {
+    # If the UI dosnt exist, OR if we're asked to list all possible UIs
+    # print all UIs.
+    if (   ( !exists $utils::config->{UI}->{ $opt->{ui} } )
+        or ( $opt->{listui} ) )
+    {
         print "Configured UIs: ";
-        foreach ( keys %{ $config->{UI} } ) {
+        foreach ( keys %{ $utils::config->{UI} } ) {
             print '' . $_ . ' ';
         }
-        print "\nDefault: $config->{defaultui}";
+        print "\nDefault: $utils::config->{defaultui}";
         exit(1);
     }
+
+    ##### LOOP #####
+    # Everyting is set.
+    # While the requested UI asks to continue, loop over it.
+    # when done - exit.
     while ( $utils::config->{UI}->{ $opt->{ui} }
         ->loop( $utils::config, $opt->{ui}, $opt->{uiopts} ) eq "continue" )
-    {
+    {say STDERR "ui terminated but asks for a restart";
     }
 
-    return 1;
+    return 0;
 }
+
+# sometimes it's usefull to use this script as an include.
+# if so, dont' run main straightaway but provide an import-function.
+# this function can be tossed some args and will be mapped back to @ARGV.
+
 unless (caller) {
     main;
 }
