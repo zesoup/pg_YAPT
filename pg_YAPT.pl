@@ -16,12 +16,16 @@ use utils;
 use Getopt::Long;
 use Getopt::Long::Descriptive;
 
-
 # On Sighub, reload config and continue with thatever you did.
-$SIG{HUP} = sub { utils::checkAndReloadConfig(); return; };
+$SIG{HUP} = sub {
+    utils::ErrLog( "Got SIGHUP", "main", "INFO" );
+    utils::checkAndReloadConfig();
+    return;
+};
 
 sub main {
     my $version = "0.0.4";
+
     #  Setup the argument parser.
     my ( $opt, $usage ) = describe_options(
         "Usage: pg_YAPT [opts]",
@@ -54,6 +58,7 @@ sub main {
     );
     print( $usage->text ), exit if $opt->help;
     say "pg_YAPT V$version" if $opt->{verbose};
+
     # delete the cachefile if asked to
     # doesnt rely on the config, so we can do it very early on
     if ( $opt->{deletecache} ) {
@@ -121,10 +126,16 @@ sub main {
         foreach ( sort keys %{ $utils::config->{UI} } ) {
             my $line = $_;
             if ( $utils::config->{defaultui} eq $_ ) {
-                $line = "*" . $line ;
+                $line = "*" . $line;
             }
             else { $line = ' ' . $line }
-            if ($opt->{verbose}){$line = "[".$utils::config->{UI}->{$_}->{template}."]".utils::fillwith(" ",5-length($utils::config->{UI}->{$_}->{template})).$line;}
+            if ( $opt->{verbose} ) {
+                $line = "["
+                  . $utils::config->{UI}->{$_}->{template} . "]"
+                  . utils::fillwith( " ",
+                    5 - length( $utils::config->{UI}->{$_}->{template} ) )
+                  . $line;
+            }
             say $line ;
         }
         exit(0);
