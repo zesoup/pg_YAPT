@@ -25,6 +25,13 @@ sub loop {
     my ( $obj, $config, $name, $opts ) = @_;
     my $pack      = $name;
     my $configAge = $utils::configAge;
+    my $loopcount = -1;
+    if ( $opts =~ "loops" ) {
+            my $start = index( $opts, "loops" ) + length("loops=");
+            my $end = index( $opts, " ", $start );
+            $end = 5 if ( $end < 0 );
+            $loopcount = int( substr( $opts, $start, $end ) );
+        }
 
     $obj->{hashsize} =
       @{ $config->{UI}->{$pack}->{checks} };
@@ -34,7 +41,7 @@ sub loop {
 # Initialize with a newline. This is will cause an unnecessary newline on startup, but will make sure
 # a sighup will work fine.
 
-    while (1) {
+    while ($loopcount--) {
         $utils::config->{DB}->commit;
 
         if ( $configAge ne $utils::configAge ) {

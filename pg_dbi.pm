@@ -14,49 +14,56 @@ sub new {
     $self->{config} = $params{config};
     bless( $self, __PACKAGE__ );
     if ( $self->{config}->{tests} ) {
-     utils::ErrLog ("Tests Enabled! Will not connect to DB!", "DB", "WARN"); 
-     $self->{tests} = 1; }
-    else {
-        $self->{dbh} = init( $params{config}->{database} )
-          ;                        #push database - there are the configs
+        utils::ErrLog( "Tests Enabled! Will not connect to DB!", "DB", "WARN" );
     }
     return $self;
 }
 
 sub init {
-    my $dbh = DBI->connect( 'DBI:Pg:' . $_[0]->{connection}, "", "" )
-     or utils::ErrLog ("Couldnt connect to DB", "DB", "FATAL");# or die "Couldn't connect to Database";
+    if ( $_[0]->{tests} ) { return undef; }
+    my $dbh =
+         DBI->connect( 'DBI:Pg:' . $_[0]->{database}->{connection}, "", "" )
+      or utils::ErrLog( "Couldnt connect to DB", "DB", "FATAL" )
+      ;    # or die "Couldn't connect to Database";
     $dbh->{AutoCommit}  = 0;
     $dbh->{ReadOnly}    = 1;
-    $dbh->{destination} = $_[0]->{connection};
+    $dbh->{destination} = $_[0]->{database}->{connection};
     unless ($dbh) { exit(1); }
     return $dbh;
 }
 
 sub commit {
-    unless ( $_[0]->{tests} ) { $_[0]->{dbh}->commit; }
+    if (    ( !$_[0]->{config}->{tests} )
+        and ( UNIVERSAL::isa( $_[0]->{config}->{dbh}, "DBI::db" ) ) )
+    {
+        $_[0]->{dbh}->commit;
+    }
 }
 
 sub returnAndStore {
     my ( $config, $query, $cachename ) = @_;
     my ( $starts, $startms ) = gettimeofday;
-    if ( exists $config->{tests} ) {
+    if ( $config->{config}->{tests} ) {
         my $output = [ [0] ];
         $output = $config->{config}->{checks}->{$cachename}->{querytest};
         return $output;
     }
     my $attempts = 0;
   RETRY:
-    if ( $attempts >= $config->{config}->{database}->{maxAttempts} ) { die "could not reestablish connection"; }
+    if ( $attempts >= $config->{config}->{database}->{maxAttempts} ) {
+        die "could not reestablish connection";
+    }
     if ($attempts) {
-        utils::ErrLog("DB-Connection broken!", "DB", "WARN");
-        usleep( $config->{config}->{database}->{reconnectdelay}*1000000 );
-        utils::ErrLog("Trying to reconnect", "DB", "INFO");
-        $config->{dbh} = init( $config->{config}->{database} );
+        utils::ErrLog( "Not Connected to DB!", "DB", "WARN" )
+          if ( UNIVERSAL::isa( $config->{dbh}, "DBI::db" ) );
+        usleep( $config->{config}->{database}->{reconnectdelay} * 1000000 );
+        utils::ErrLog( "Trying to reconnect", "DB", "INFO" )
+          if ( UNIVERSAL::isa( $config->{dbh}, "DBI::db" ) );
+        $config->{dbh} = init( $config->{config} );
     }
 
-    $attempts++; 
-    goto RETRY unless (UNIVERSAL::isa($config->{dbh}, "DBI::db")  );
+    $attempts++;
+    goto RETRY unless ( UNIVERSAL::isa( $config->{dbh}, "DBI::db" ) );
     my $stm = $config->{dbh}->prepare($query) or goto RETRY;
     $stm->execute() or goto RETRY;
 

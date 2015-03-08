@@ -53,6 +53,7 @@ sub main {
             "print checktimes longer X to stderr",
             { default => -1 }
         ],
+        [ 'test|T', "do not connect to the database", {} ],
         [ 'verbose|v', "print additional info. works good with list", {} ],
         [ 'help|h',    "print usage message and exit" ],
     );
@@ -83,7 +84,7 @@ sub main {
         $utils::configFile = $opt->{config};
         $utils::config->{Reattachable} = 1;
     }
-
+    if ($opt->{test}){$utils::config->{tests} = 1;};
     # config is now loaded. check if there's an override for the UI.
     # If not, reset the $opt->{ui} value with the default.
     if ( $opt->{list} ) {

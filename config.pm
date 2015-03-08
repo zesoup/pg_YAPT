@@ -60,7 +60,7 @@ $config = {
             ]
         },
         test => {
-            template   => "csv",
+            template   => "wall",
             updatetime => 100000,
             checks     => [
                 "AnlzAge", "BlkAcc",  "I/U/D",   "Locks",

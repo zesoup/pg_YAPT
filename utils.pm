@@ -14,6 +14,7 @@ use Time::HiRes qw(usleep gettimeofday);
 our $configFile;
 our $config;
 our $configAge;
+our $testmode;
 
 sub cacheConfig {
     open my $FH, ">", ".cache.pm";
@@ -169,9 +170,9 @@ sub stampend {
     $obj->{endstamp} = gettimeofday();
 }
 
-sub ErrLog{
-my ($msg, $sender, $type)=@_;
-say STDERR "[".localtime."]".$type." ".$sender.":".$msg;
+sub ErrLog {
+    my ( $msg, $sender, $type ) = @_;
+    say STDERR "[" . localtime . "]" . $type . " " . $sender . ":" . $msg;
 }
 
 1;
