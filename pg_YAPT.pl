@@ -16,17 +16,18 @@ use utils;
 use Getopt::Long;
 use Getopt::Long::Descriptive;
 
+
 # On Sighub, reload config and continue with thatever you did.
 $SIG{HUP} = sub { utils::checkAndReloadConfig(); return; };
 
 sub main {
-
+    my $version = "0.0.4";
     #  Setup the argument parser.
     my ( $opt, $usage ) = describe_options(
         "Usage: pg_YAPT [opts]",
         [],
         [ 'ui|u=s',     "override the UI-choice from config.  ", {} ],
-        [ 'listui|l',   "list all configured UIs",               {} ],
+        [ 'list|l',     "list all checks and configured UIs",    {} ],
         [ 'uiopts|o=s', "UI-specific options to push down",      {} ],
         [],
         [
@@ -43,11 +44,16 @@ sub main {
         [ 'config|c=s', "config to use",    { default => "config.pm" } ],
         [ 'cache|C=s',  "cacheFile to use", { default => ".cache.pm" } ],
         [],
-        [ 'timing|t=i', "print checktimes longer X to stderr", {default=>-1} ],
+        [
+            'timing|t=i',
+            "print checktimes longer X to stderr",
+            { default => -1 }
+        ],
+        [ 'verbose|v', "print additional info. works good with list", {} ],
         [ 'help|h',    "print usage message and exit" ],
     );
     print( $usage->text ), exit if $opt->help;
-
+    say "pg_YAPT V$version" if $opt->{verbose};
     # delete the cachefile if asked to
     # doesnt rely on the config, so we can do it very early on
     if ( $opt->{deletecache} ) {
@@ -60,11 +66,11 @@ sub main {
     $utils::configFile = $opt->{config};
     utils::checkAndReloadConfig();
 
-    # if we're asked to be reattachable reset the targetfile to cache and load again.
-    # because the contents may be blessed, we need to load the defaultconfig first to make
-    # sure all includes allready exist.
-    #
-    # once done, reset the targetfile again to provide proper reload-functionality on sighup.
+# if we're asked to be reattachable reset the targetfile to cache and load again.
+# because the contents may be blessed, we need to load the defaultconfig first to make
+# sure all includes allready exist.
+#
+# once done, reset the targetfile again to provide proper reload-functionality on sighup.
     if ( $opt->{reattachable} ) {
         $utils::configFile = $opt->{cache};
         utils::checkAndReloadConfig();
@@ -72,26 +78,56 @@ sub main {
         $utils::configFile = $opt->{config};
         $utils::config->{Reattachable} = 1;
     }
+
     # config is now loaded. check if there's an override for the UI.
     # If not, reset the $opt->{ui} value with the default.
+    if ( $opt->{list} ) {
+        say "Existing checks:";
+        foreach ( sort keys %{ $utils::config->{checks} } ) {
+            my $doc = "-/-";
+            my $out = $_;
+            if ( exists $utils::config->{checks}->{$_}->{doc} ) {
+                $doc = $utils::config->{checks}->{$_}->{doc};
+            }
+            if ( $opt->{verbose} ) {
+                $out = "["
+                  . $utils::config->{checks}->{$_}->{plugin} . "]"
+                  . utils::fillwith( " ",
+                    11 - length( $utils::config->{checks}->{$_}->{plugin} ) )
+                  . $out
+                  . utils::fillwith( " ", 9 - length($out) ) . ": "
+                  . $doc;
+            }
+
+            say " " . $out;
+        }
+        say "";
+    }
+
     unless ( exists $opt->{ui} ) { $opt->{ui} = $utils::config->{defaultui}; }
-    if ( exists $opt->{timing}){$utils::config->{timing} = $opt->{timing};}
-    
+    if ( exists $opt->{timing} ) { $utils::config->{timing} = $opt->{timing}; }
+
     # Now check if the requested UI actually exists.
     if ( !exists $utils::config->{UI}->{ $opt->{ui} } ) {
-        utils::ErrLog ("Unknown UI:" . $opt->{ui}, "main", "FATAL");
+        utils::ErrLog( "Unknown UI:" . $opt->{ui}, "main", "FATAL" );
     }
+
     # If the UI dosnt exist, OR if we're asked to list all possible UIs
     # print all UIs.
     if (   ( !exists $utils::config->{UI}->{ $opt->{ui} } )
-        or ( $opt->{listui} ) )
+        or ( $opt->{list} ) )
     {
-        print "Configured UIs: ";
-        foreach ( keys %{ $utils::config->{UI} } ) {
-            print '' . $_ . ' ';
+        say "Existing UIs:";
+        foreach ( sort keys %{ $utils::config->{UI} } ) {
+            my $line = $_;
+            if ( $utils::config->{defaultui} eq $_ ) {
+                $line = "*" . $line ;
+            }
+            else { $line = ' ' . $line }
+            if ($opt->{verbose}){$line = "[".$utils::config->{UI}->{$_}->{template}."]".utils::fillwith(" ",5-length($utils::config->{UI}->{$_}->{template})).$line;}
+            say $line ;
         }
-        print "\nDefault: $utils::config->{defaultui}";
-        exit(1);
+        exit(0);
     }
 
     ##### LOOP #####
@@ -100,7 +136,8 @@ sub main {
     # when done - exit.
     while ( $utils::config->{UI}->{ $opt->{ui} }
         ->loop( $utils::config, $opt->{ui}, $opt->{uiopts} ) eq "continue" )
-    {utils::ErrLog "ui terminated but asks for a restart", "main", "INFO";
+    {
+        utils::ErrLog "ui terminated but asks for a restart", "main", "INFO";
     }
 
     return 0;

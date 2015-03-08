@@ -20,7 +20,7 @@ $config = {
             checks     => [
                 "WAL",   "txID",    "BlkAcc", "SIZE",
                 "TotRows", "Locks",  "RTupT",
-                "RTupI", "Locks",   "TheTime"
+                "RTupI"
             ]
         },
         wlwork => {
@@ -36,6 +36,12 @@ $config = {
             updatetime => 1000000,                      #ns
             checks     => [ "User", "txID", "Locks" ]
         },
+         wlDML => {
+            template   => "wall",
+            updatetime => 1000000,                      #ns
+            checks     => [ "S/I", "I/U/D" ]
+        },
+
         json => {
             template   => "json",
             updatetime => 1000000,

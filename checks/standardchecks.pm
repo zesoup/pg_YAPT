@@ -22,11 +22,13 @@
         $checks = {
             hosttime => {
                 plugin => "thetime",
+                doc => "check the local time. usefull if compared with db-host"
             },
             "QTime" => {
                 query     => "Select sum( total_time ) from pg_stat_statements",
                 querytest => [ [0] ],
                 units     => ["ms"],
+                doc => "total time of querys. Part of pg_stat_statements!",
                 plugin    => "querycheck",
                 action    => sub {
                     return [
@@ -40,7 +42,8 @@
             "PID" => {
                 query     => "Select pg_backend_pid();",
                 plugin    => "querycheck",
-                querytest => [ [1234] ]
+                querytest => [ [1234] ],
+                doc=>"returns the current backendPID of the checking process. Usefull for debugging"
             },
             "MaxBlt" => {
                 query =>"select substring(relname,length(relname)-7)||'/'||round((coalesce(n_dead_tup,0)/(coalesce(n_dead_tup::numeric,1)+coalesce(n_live_tup::numeric,1) ))*100,0)::text||'%' from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;",
@@ -53,6 +56,7 @@
                 isDelta   => 1,
                 plugin    => "querycheck",
                 units     => ["MB"],
+         doc => "New WAL-Files | Wal written in MB",
                 querytest => [ [ "6/8FA66AE0", "00000001000000060000008F" ] ],
                 action    => sub {
                     my $walwritten = (
@@ -73,6 +77,7 @@
 "select sum(seq_scan), sum(idx_scan) from pg_stat_user_tables;",
                 plugin    => "querycheck",
                 querytest => [ [ 0, 0 ] ],
+                doc => "SeqScans vs IndexScans on usertables",
                 action    => sub {
                     my $SEQ =
                       $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
@@ -82,9 +87,9 @@
                     if ( $total <= 0 ) { $total = 1; }
                     return [
 
-                        floor( 10 * $SEQ / $total ) . '/'
-                          . floor( 10 * $IDX / $total ) . '|'
-                          . ceil( $total / 10000 ) . 'k',
+                        int( 10 * $SEQ / $total ) . '/'
+                          . int( 10 * $IDX / $total ) . '|'
+                          . int( $total / 10000 ) . 'k',
                         0
                     ];
                   }
@@ -111,6 +116,7 @@
                 plugin => "querycheck",
                 querytest => [ [0] ],
                 units     => ["m"],
+                doc => "estimate of total existing tuples",
                 action    => sub {
                     return [
                         sprintf( "%.1f", $_[0]->{metric}->[0][0] / 1000000 ), 0
@@ -145,6 +151,7 @@ on true;",
                 plugin    => "querycheck",
                 units     => [""],
                 querytest => [ [0] ],
+doc => "Read Tuples from Table",
                 action    => sub {
                     my $TBL =
                       $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
@@ -165,15 +172,15 @@ on true;",
                       $_[0]->{metric}->[0][4] - $_[0]->{oldmetric}->[0][4];
                     my $total = $INS + $UPD + $DEL;
                     if ( $total <= 0 ) { $total = 1; }
-                    $INS = floor( 10 * $INS / $total );
-                    $UPD = floor( 10 * $UPD / $total );
-                    $DEL = floor( 10 * $DEL / $total );
+                    $INS = int( 10 * $INS / $total );
+                    $UPD = int( 10 * $UPD / $total );
+                    $DEL = int( 10 * $DEL / $total );
                     return [
 
                         $INS . '/'
                           . $UPD . '/'
                           . $DEL . '|'
-                          . ceil( $total / 10000 ) . 'k',
+                          . int( $total / 10000 ) . 'k',
                         0
                     ];
                   }
@@ -191,6 +198,7 @@ on true;",
 "select sum( coalesce(idx_tup_fetch,0)+coalesce(idx_tup_read,0) ) from pg_stat_user_indexes",
                 plugin    => "querycheck",
                 units     => [""],
+doc => "Read Tuples from Index",
                 querytest => [ [0] ],
                 action    => sub {
                     my $IDX =
@@ -202,6 +210,7 @@ on true;",
                 query =>
 "select extract(epoch from now() -min(last_analyze))::integer from pg_stat_user_tables ;",
                 plugin    => "querycheck",
+doc => "Age of oldest Analyze",
                 querytest => [ [0] ]
             },
             'Random' => {
@@ -214,6 +223,7 @@ on true;",
                 query =>"select sum( coalesce(heap_blks_read,0)+coalesce(heap_blks_hit,0)+coalesce( idx_blks_hit, 0)+coalesce( idx_blks_hit, 0)+ coalesce(toast_blks_read, 0)+coalesce(toast_blks_hit,0)+coalesce(tidx_blks_hit,0)+coalesce(tidx_blks_hit,0) ) as reads from pg_statio_sys_tables ;",
                 plugin    => "querycheck",
                 units     => ["MB"],
+doc => "shmem accessed for systables in MB",
                 querytest => [ [0] ],
                 action    => sub {
                     return [
@@ -235,6 +245,7 @@ on true;",
                 plugin    => "querycheck",
                 units     => ["MB"],
                 querytest => [ [0] ],
+doc => "shmem accessed for usertables in MB",
                 action    => sub {
                     return [
                         sprintf(
