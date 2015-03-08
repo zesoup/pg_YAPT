@@ -28,9 +28,11 @@ sub loop {
 
     $obj->{hashsize} =
       @{ $config->{UI}->{$pack}->{checks} };
-    my $line = "";
+    my $line = "\n";
     while (1) {
-        if ( $configAge ne $utils::configAge ) {
+      $utils::config->{DB}->commit;
+
+       if ( $configAge ne $utils::configAge ) {
            return "continue";
         }
         my $linestart = gettimeofday;
@@ -39,9 +41,12 @@ sub loop {
         $config->{dbh}->{worsttime} = 0;
         unless ( exists $config->{main}->{i} ) { $config->{main}->{i} = 0; }
         unless ( $config->{main}->{i}++ % ( $hchar - 2 ) ) {
+            my $first = 0;
             foreach ( @{ $obj->{checks} } ) {
-                $line .= color("Green")
-                  . utils::widen( $wchar, $_, $obj->{hashsize}, 0, " " );
+                if ($first++){$line.= color("bright_yellow") . '│'};
+                $line .=  color("bright_green")
+                  . utils::widen( $wchar, $_, $obj->{hashsize}, 1, " " )
+                  .  color("reset");
             }
             $line .= "\n";
 
@@ -76,7 +81,7 @@ sub loop {
         $line = "\n";
         $| = 1;
         
-        $utils::config->{DB}->commit;
+        #$utils::config->{DB}->commit;
         my $timetosleep =
           ( $obj->{updatetime} - ( gettimeofday- $linestart ) * 1000000 );
         if ( $timetosleep < 0 ) {

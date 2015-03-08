@@ -2,10 +2,10 @@ $config = {
 
     #Main Information and Params
     version  => "2.0",
-    tests => 0,
+    tests    => 0,
     database => {
-        maxAttempts=> 9999999,
-        reconnectdelay=> 0.5,
+        maxAttempts    => 9999999,
+        reconnectdelay => 0.5,
         connection => "host=127.0.0.1;dbname=postgres;application_name=pg_YAPT"
     },
     defaultui => 'default',
@@ -15,23 +15,29 @@ $config = {
 
     UI => {
         default => {
-            template => "wall",
-            updatetime => 100000,    #ns
+            template   => "wall",
+            updatetime => 1000000,    #ns
             checks     => [
-                "WAL",   "txID", "BlkAcc","SIZE",
-                "TotRows", "Locks","RTupT", "RTupI", "Locks", "TheTime"
+                "WAL",   "txID",    "BlkAcc", "SIZE",
+                "QTime", "TotRows", "Locks",  "RTupT",
+                "RTupI", "Locks",   "TheTime"
+            ]
+        },
+        wlwork => {
+            template   => "wall",
+            updatetime => 1000000,
+            checks     => [
+                "WAL",   "txID",  "SysBlk", "BlkAcc", "QTime", "Locks",
+                "RTupT", "RTupI", "S/I",    "I/U/D"
             ]
         },
         wlusers => {
-            template => "wall",
-            updatetime => 1000000,    #ns
-            checks     => [
-                "User", "txID", 
-                "Locks"
-            ]
+            template   => "wall",
+            updatetime => 1000000,                      #ns
+            checks     => [ "User", "txID", "Locks" ]
         },
         json => {
-            template=>"json",
+            template   => "json",
             updatetime => 1000000,
             checks     => [
                 "Random", "WAL",    "User",    "TheTime",
@@ -39,19 +45,19 @@ $config = {
                 "txID"
             ]
         },
-        csv=> {
-            template=>"csv",
+        csv => {
+            template   => "csv",
             updatetime => 1000000,
             checks     => [
                 "TotRows", "WAL",    "User",    "TheTime",
-                "MaxBlt", "BlkAcc", "TotRows", "Locks",
+                "MaxBlt",  "BlkAcc", "TotRows", "Locks",
                 "txID"
             ]
         },
 
         curses => {
-            template=>"curses",
-            checks => [ "TheTime", "User", "MaxBlt" ]
+            template => "curses",
+            checks   => [ "TheTime", "User", "MaxBlt" ]
           }
 
     }

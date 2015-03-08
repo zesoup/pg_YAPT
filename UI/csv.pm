@@ -61,7 +61,7 @@ sub loop {
         if ( $config->{Reattachable} == 1 ) { utils::cacheConfig($config); }
 
         if ( $UIopts =~ "repeat" ) { $loopagain = 1 }
-
+        $utils::config->{DB}->commit;
         if ( ($loopagain) and ( exists $obj->{updatetime} ) ) {
             usleep $obj->{updatetime};
         }
