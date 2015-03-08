@@ -86,8 +86,8 @@ sub loop {
             my $unit   = $currentCheck->{units}[0] or "";
             my $status = $tup->[1];
             my $clr    = "White";
-            if ( int($status) >= 1 ) { $clr = "Yellow"; }
-            if ( int($status) >= 2 ) { $clr = "Red"; }
+            if ( int($status) >= 1 ) { $clr = "Bright_Yellow"; }
+            if ( int($status) >= 2 ) { $clr = "Bright_Red"; }
 
             $line .=
               color($clr)

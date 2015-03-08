@@ -163,7 +163,7 @@ doc => "Read Tuples from Table",
                 query =>
 "select sum(tup_returned), sum(tup_fetched), sum(tup_inserted), sum(tup_updated), sum(tup_deleted) from pg_stat_database;",
                 plugin    => "querycheck",
-                querytest => [ [ 0, 0, 0, 0, 0 ] ],
+                querytest => [ [ 1, 2, 3, 4, 5 ] ],
                 action    => sub {
                     my $INS =
                       $_[0]->{metric}->[0][2] - $_[0]->{oldmetric}->[0][2];

@@ -22,7 +22,7 @@ sub new {
 sub init {
     if ( $_[0]->{tests} ) { return undef; }
     my $dbh =
-         DBI->connect( 'DBI:Pg:' . $_[0]->{database}->{connection}, "", "" )
+      DBI->connect( 'DBI:Pg:' . $_[0]->{database}->{connection}, "", "" )
       or utils::ErrLog( "Couldnt connect to DB", "DB", "FATAL" )
       ;    # or die "Couldn't connect to Database";
     $dbh->{AutoCommit}  = 0;
@@ -33,11 +33,12 @@ sub init {
 }
 
 sub commit {
-    if (    ( !$_[0]->{config}->{tests} )
-        and ( UNIVERSAL::isa( $_[0]->{config}->{dbh}, "DBI::db" ) ) )
-    {
-        $_[0]->{dbh}->commit;
-    }
+    return
+      if (  ( exists $_[0]->{config}->{tests} )
+        and ( $_[0]->{config}->{tests} == 1 ) );
+    return unless ( UNIVERSAL::isa( $_[0]->{dbh}, "DBI::db" ) );
+    $_[0]->{dbh}->commit;
+    return;
 }
 
 sub returnAndStore {
