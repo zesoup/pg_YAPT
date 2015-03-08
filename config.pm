@@ -18,9 +18,8 @@ $config = {
             template   => "wall",
             updatetime => 1000000,    #ns
             checks     => [
-                "WAL",   "txID",    "BlkAcc", "SIZE",
-                "TotRows", "Locks",  "RTupT",
-                "RTupI"
+                "WAL", "SIZE", "UpTime",
+                "TotRows", "S/I", "I/U/D"
             ]
         },
         wlwork => {
@@ -36,7 +35,7 @@ $config = {
             updatetime => 1000000,                      #ns
             checks     => [ "User", "txID", "Locks" ]
         },
-         wlDML => {
+        wlDML => {
             template   => "wall",
             updatetime => 1000000,                      #ns
             checks     => [ "S/I", "I/U/D" ]
@@ -46,7 +45,7 @@ $config = {
             template   => "json",
             updatetime => 1000000,
             checks     => [
-                "Random", "WAL",    "User",    "TheTime",
+                "Random", "WAL",    "User",    "UpTime",
                 "MaxBlt", "BlkAcc", "TotRows", "Locks",
                 "txID"
             ]
@@ -55,15 +54,28 @@ $config = {
             template   => "csv",
             updatetime => 1000000,
             checks     => [
-                "TotRows", "WAL",    "User",    "TheTime",
+                "TotRows", "WAL",    "User",    "UpTime",
                 "MaxBlt",  "BlkAcc", "TotRows", "Locks",
                 "txID"
             ]
-        }
-        #curses => {
-        #    template => "curses",
-        #    checks   => [ "TheTime", "User", "MaxBlt" ]
-        #  }
+        },
+        test => {
+            template   => "csv",
+            updatetime => 100000,
+            checks     => [
+                "AnlzAge", "BlkAcc",  "I/U/D",   "Locks",
+                "MaxBlt",  "PID",     "QTime",   "RTupI",
+                "RTupT",   "Random",  "S/I",     "SIZE",
+                "SysBlk",  "UpTime", "TotRows", "User",
+                "WAL",     "txID"
+              ]
+
+          }
+
+          #curses => {
+          #    template => "curses",
+          #    checks   => [ "UpTime", "User", "MaxBlt" ]
+          #  }
 
     }
 };

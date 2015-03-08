@@ -23,34 +23,42 @@ sub loop {
     print $pidFH $$;
     close $pidFH;
     my ( $obj, $config, $name, $opts ) = @_;
-    my $pack = $name;
+    my $pack      = $name;
     my $configAge = $utils::configAge;
 
     $obj->{hashsize} =
       @{ $config->{UI}->{$pack}->{checks} };
-    
+
     my $line = "\n";
-    # Initialize with a newline. This is will cause an unnecessary newline on startup, but will make sure
-    # a sighup will work fine.
+
+# Initialize with a newline. This is will cause an unnecessary newline on startup, but will make sure
+# a sighup will work fine.
 
     while (1) {
-      $utils::config->{DB}->commit;
+        $utils::config->{DB}->commit;
 
-       if ( $configAge ne $utils::configAge ) {
-           return "continue";
+        if ( $configAge ne $utils::configAge ) {
+            return "continue";
         }
         my $linestart = gettimeofday;
         my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
+        if ( $opts =~ "width" ) {
+            my $start = index( $opts, "width" ) + length("width=");
+            my $end = index( $opts, " ", $start );
+            $end = 5 if ( $end < 0 );
+            $wchar = int( substr( $opts, $start, $end ) );
+        }
         my $config = $utils::config;
         $config->{dbh}->{worsttime} = 0;
         unless ( exists $config->{main}->{i} ) { $config->{main}->{i} = 0; }
         unless ( $config->{main}->{i}++ % ( $hchar - 2 ) ) {
             my $first = 0;
             foreach ( @{ $obj->{checks} } ) {
-                if ($first++){$line.= color("bright_yellow") . '│'};
-                $line .=  color("bright_green")
+                if ( $first++ ) { $line .= color("bright_yellow") . '│' }
+                $line .=
+                    color("bright_green")
                   . utils::widen( $wchar, $_, $obj->{hashsize}, 1, " " )
-                  .  color("reset");
+                  . color("reset");
             }
             $line .= "\n";
 
@@ -83,13 +91,13 @@ sub loop {
             $line = "";
         }
         $line = "\n";
-        $| = 1;
-        
+        $|    = 1;
+
         #$utils::config->{DB}->commit;
         my $timetosleep =
           ( $obj->{updatetime} - ( gettimeofday- $linestart ) * 1000000 );
         if ( $timetosleep < 0 ) {
-            utils::ErrLog ("Queries take too long for loop!", "WALL", "WARN");
+            utils::ErrLog( "Queries take too long for loop!", "WALL", "WARN" );
             $timetosleep = 0;
         }
         usleep $timetosleep;

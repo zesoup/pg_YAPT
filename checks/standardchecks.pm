@@ -105,11 +105,12 @@
                     ];
                   }
             },
-            TheTime => {
+            UpTime => {
                 query =>
-"SELECT floor(extract(epoch from  now() - pg_postmaster_start_time() ))",
+"SELECT round((extract(epoch from  now() - pg_postmaster_start_time() )/(60*60))::numeric,1)",
                 plugin    => "querycheck",
-                querytest => [ [0] ]
+                querytest => [ [0] ],
+                units=>["h"]
             },
             "TotRows" => {
                 query  => "select sum(coalesce(reltuples,0) ) from pg_class;",
