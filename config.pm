@@ -19,7 +19,7 @@ $config = {
             updatetime => 1000000,    #ns
             checks     => [
                 "WAL",   "txID",    "BlkAcc", "SIZE",
-                "QTime", "TotRows", "Locks",  "RTupT",
+                "TotRows", "Locks",  "RTupT",
                 "RTupI", "Locks",   "TheTime"
             ]
         },
@@ -53,12 +53,11 @@ $config = {
                 "MaxBlt",  "BlkAcc", "TotRows", "Locks",
                 "txID"
             ]
-        },
-
-        curses => {
-            template => "curses",
-            checks   => [ "TheTime", "User", "MaxBlt" ]
-          }
+        }
+        #curses => {
+        #    template => "curses",
+        #    checks   => [ "TheTime", "User", "MaxBlt" ]
+        #  }
 
     }
 };

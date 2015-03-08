@@ -3,10 +3,14 @@ Yet another postgres top
 
 ![alt tag](https://github.com/zesoup/pg_YAPT/blob/master/preview.png)
 
-A top-like postgres tool thats designed to be highly customizable.
+A top-like postgres tool.
 
-#Install:
-n/a
+##Install:
+For Jessie, just pull some perl-libs.
+    apt-get install libfile-slurp-perl libgetopt-long-descriptive-perl
 
-#ToDo
-n/a
+Some checks are built for special postgres addons.
+QTime for example uses pg_stat_statements.
+##Usage:
+Update the connectionstring in config.pm.
+Run the tool.

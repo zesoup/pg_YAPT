@@ -43,8 +43,7 @@
                 querytest => [ [1234] ]
             },
             "MaxBlt" => {
-                query =>
-"select substring(relname,length(relname)-7)||'/'||round((coalesce(n_dead_tup,0)/(coalesce(n_dead_tup::numeric,1)+coalesce(n_live_tup::numeric,1) ))*100,0)::text||'%' from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;",
+                query =>"select substring(relname,length(relname)-7)||'/'||round((coalesce(n_dead_tup,0)/(coalesce(n_dead_tup::numeric,1)+coalesce(n_live_tup::numeric,1) ))*100,0)::text||'%' from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;",
                 plugin    => "querycheck",
                 querytest => [ ["_tellers/50%"] ]
             },
@@ -212,9 +211,7 @@ on true;",
 
             },
             'SysBlk' => {
-                query => "select sum(heap_blks_read)+sum(heap_blks_hit)+
-sum( idx_blks_hit)+sum( idx_blks_hit)+sum(toast_blks_read)
-+sum(toast_blks_hit)+sum(tidx_blks_hit)+sum(tidx_blks_hit) as reads from pg_statio_sys_tables ;",
+                query =>"select sum( coalesce(heap_blks_read,0)+coalesce(heap_blks_hit,0)+coalesce( idx_blks_hit, 0)+coalesce( idx_blks_hit, 0)+ coalesce(toast_blks_read, 0)+coalesce(toast_blks_hit,0)+coalesce(tidx_blks_hit,0)+coalesce(tidx_blks_hit,0) ) as reads from pg_statio_sys_tables ;",
                 plugin    => "querycheck",
                 units     => ["MB"],
                 querytest => [ [0] ],
@@ -233,11 +230,7 @@ sum( idx_blks_hit)+sum( idx_blks_hit)+sum(toast_blks_read)
             },
 
             'BlkAcc' => {
-                query => "select sum(heap_blks_read)+sum(heap_blks_hit)+
-sum( idx_blks_hit)+sum( idx_blks_hit)+sum(toast_blks_read)
-+sum(toast_blks_hit)+sum(tidx_blks_hit)+sum(tidx_blks_hit) as reads from pg_statio_user_tables ;",
-
-#"select sum( coalesce(heap_blks_read,0)+coalesce(heap_blks_hit,0)+coalesce( idx_blks_hit, 0)+coalesce( idx_blks_hit, 0)+ coalesce(toast_blks_read, 0)+coalesce(toast_blks_hit,0)+coalesce(tidx_blks_hit,0)+coalesce(tidx_blks_hit,0) ) as reads from pg_statio_user_tables ;",
+                query => "select sum( coalesce(heap_blks_read,0)+coalesce(heap_blks_hit,0)+coalesce( idx_blks_hit, 0)+coalesce( idx_blks_hit, 0)+ coalesce(toast_blks_read, 0)+coalesce(toast_blks_hit,0)+coalesce(tidx_blks_hit,0)+coalesce(tidx_blks_hit,0) ) as reads from pg_statio_user_tables ;",
 
                 plugin    => "querycheck",
                 units     => ["MB"],

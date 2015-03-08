@@ -28,7 +28,11 @@ sub loop {
 
     $obj->{hashsize} =
       @{ $config->{UI}->{$pack}->{checks} };
+    
     my $line = "\n";
+    # Initialize with a newline. This is will cause an unnecessary newline on startup, but will make sure
+    # a sighup will work fine.
+
     while (1) {
       $utils::config->{DB}->commit;
 
