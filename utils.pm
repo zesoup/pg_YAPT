@@ -68,6 +68,27 @@ sub fillwith {
     return $out;
 }
 
+sub storePID{
+    open my $pidFH, ">", "pid";
+    print $pidFH $$;
+    close $pidFH;
+}
+sub removePID{
+unlink "pid";
+}
+
+sub getValueOfOptOrDefault{
+    my ($opts, $val,$default)= @_;
+    if (($opts) and ($val) and ($opts =~ $val) ) {
+            my $start = index( $opts, $val ) + length($val);
+            my $end = index( $opts, " ", $start );
+
+            if ( $end < 0 ){$end = 999};
+            return int( substr( $opts, $start, $end-$start ) );
+        }
+    return $default;
+}
+
 sub getMD5ofFile {
 
     # hash the content of a file.
@@ -142,6 +163,8 @@ sub reloadConf {
     return $config;
 }
 
+
+
 sub checkAndReloadConfig {
     open my $FH, "<", $configFile
       or return 1;    #It is possible that opening the config fails.
@@ -172,7 +195,7 @@ sub stampend {
 
 sub ErrLog {
     my ( $msg, $sender, $type ) = @_;
-    say STDERR "[" . localtime . "]" . $type . " " . $sender . ":" . $msg;
+    say STDERR "[" . localtime . "] " . $type . " " . $sender . ":" . $msg;
 }
 
 1;

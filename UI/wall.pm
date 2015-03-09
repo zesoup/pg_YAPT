@@ -8,7 +8,7 @@ use POSIX;
 use Term::ANSIColor;
 use utils;
 
-$SIG{INT} = sub { unlink "pid"; exit "sigint"; };
+$SIG{INT} = sub { utils::removePID(); exit "sigint"; };
 
 sub new {
     my (%params) = @_;
@@ -19,22 +19,14 @@ sub new {
 }
 
 sub loop {
-    open my $pidFH, ">", "pid";
-    print $pidFH $$;
-    close $pidFH;
-    my ( $obj, $config, $name, $opts ) = @_;
-    my $pack      = $name;
-    my $configAge = $utils::configAge;
-    my $loopcount = -1;
-    if ( $opts =~ "loops" ) {
-            my $start = index( $opts, "loops" ) + length("loops=");
-            my $end = index( $opts, " ", $start );
-            $end = 5 if ( $end < 0 );
-            $loopcount = int( substr( $opts, $start, $end ) );
-        }
+    utils::storePID();
 
+    my ( $obj, $config, $name, $opts ) = @_;
+    my $configAge = $utils::configAge;
+    my $loopcount = utils::getValueOfOptOrDefault($opts, "loops=",-1);
+    my $fixwidth = utils::getValueOfOptOrDefault($opts,"width=",-1);
     $obj->{hashsize} =
-      @{ $config->{UI}->{$pack}->{checks} };
+      @{ $config->{UI}->{$name}->{checks} };
 
     my $line = "\n";
 
@@ -49,16 +41,13 @@ sub loop {
         }
         my $linestart = gettimeofday;
         my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
-        if ( $opts =~ "width" ) {
-            my $start = index( $opts, "width" ) + length("width=");
-            my $end = index( $opts, " ", $start );
-            $end = 5 if ( $end < 0 );
-            $wchar = int( substr( $opts, $start, $end ) );
-        }
+    
+        if($fixwidth != -1){$wchar=$fixwidth }
+
         my $config = $utils::config;
         $config->{dbh}->{worsttime} = 0;
         unless ( exists $config->{main}->{i} ) { $config->{main}->{i} = 0; }
-        unless ( $config->{main}->{i}++ % ( $hchar - 2 ) ) {
+        unless ( $config->{main}->{i}++ % ( $hchar - 1 ) ) {
             my $first = 0;
             foreach ( @{ $obj->{checks} } ) {
                 if ( $first++ ) { $line .= color("bright_yellow") . '│' }
@@ -107,7 +96,7 @@ sub loop {
             utils::ErrLog( "Queries take too long for loop!", "WALL", "WARN" );
             $timetosleep = 0;
         }
-        usleep $timetosleep;
+        if ($loopcount){usleep $timetosleep};
     }
 
 }

@@ -11,7 +11,8 @@ sub new {
     my (%params) = @_;
     $params{config}->{DB} = {};    #clear last connection (if exists)
     my $self = $params{config}->{DB};
-    $self->{config} = $params{config};
+    $self->{config}    = $params{config};
+    $self->{connected} = 0;
     bless( $self, __PACKAGE__ );
     if ( $self->{config}->{tests} ) {
         utils::ErrLog( "Tests Enabled! Will not connect to DB!", "DB", "WARN" );
@@ -21,10 +22,11 @@ sub new {
 
 sub init {
     if ( $_[0]->{tests} ) { return undef; }
-    my $dbh =
-      DBI->connect( 'DBI:Pg:' . $_[0]->{database}->{connection}, "", "" )
-      or utils::ErrLog( "Couldnt connect to DB", "DB", "FATAL" )
-      ;    # or die "Couldn't connect to Database";
+    $_[0]->{DB}->{connected} = 1;
+    my $dbh = DBI->connect( 'DBI:Pg:' . $_[0]->{database}->{connection},
+        "", "", { PrintError => 0, } )
+      or
+      utils::ErrLog( "Couldnt connect to DB!\n" . $DBI::errstr, "DB", "FATAL" );
     $dbh->{AutoCommit}  = 0;
     $dbh->{ReadOnly}    = 1;
     $dbh->{destination} = $_[0]->{database}->{connection};
@@ -55,11 +57,11 @@ sub returnAndStore {
         die "could not reestablish connection";
     }
     if ($attempts) {
-        utils::ErrLog( "Not Connected to DB!", "DB", "WARN" )
-          if ( UNIVERSAL::isa( $config->{dbh}, "DBI::db" ) );
-        usleep( $config->{config}->{database}->{reconnectdelay} * 1000000 );
-        utils::ErrLog( "Trying to reconnect", "DB", "INFO" )
-          if ( UNIVERSAL::isa( $config->{dbh}, "DBI::db" ) );
+        if ( $config->{connected} ) {
+            utils::ErrLog( "Not Connected to DB!", "DB", "WARN" );
+            usleep( $config->{config}->{database}->{reconnectdelay} * 1000000 );
+            utils::ErrLog( "Trying to reconnect", "DB", "INFO" );
+        }
         $config->{dbh} = init( $config->{config} );
     }
 
