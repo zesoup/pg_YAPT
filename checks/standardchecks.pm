@@ -27,14 +27,14 @@
             "QTime" => {
                 query     => "Select sum( total_time ) from pg_stat_statements",
                 querytest => [ [0] ],
-                units     => ["ms"],
+                units     => ["s"],
                 doc => "total time of querys. Part of pg_stat_statements!",
                 plugin    => "querycheck",
                 action    => sub {
                     return [
-                        sprintf( "%.1f",
-                            $_[0]->{metric}->[0][0] -
-                              $_[0]->{oldmetric}->[0][0] ),
+                        sprintf( "%.2f",
+                            ($_[0]->{metric}->[0][0] -
+                            $_[0]->{oldmetric}->[0][0])/1000 ),
                         0
                     ];
                   }
@@ -43,7 +43,7 @@
                 query     => "Select pg_backend_pid();",
                 plugin    => "querycheck",
                 querytest => [ [1234] ],
-                doc=>"returns the current backendPID of the checking process. Usefull for debugging"
+                doc=>"returns the current backendPID of the checking process. "
             },
             "MaxBlt" => {
                 query =>"select substring(relname,length(relname)-7)||'/'||round((coalesce(n_dead_tup,0)/(coalesce(n_dead_tup::numeric,1)+coalesce(n_live_tup::numeric,1) ))*100,0)::text||'%' from pg_stat_user_tables where n_live_tup > 0 order by n_dead_tup / n_live_tup desc limit 1 ;",
@@ -132,12 +132,13 @@
             Locks => {
                 query => "
 select * from 
-(select count(*) from pg_locks where pid != pg_backend_pid())as locks 
+(select count(*) from pg_locks )as locks 
 join 
 (select count(*) from pg_locks where not granted) as notgranted 
 on true;",
                 plugin    => "querycheck",
                 querytest => [ [ 0, 0 ] ],
+                doc       => " locks[waiting] . Will ignore locks for this backend",
                 action    => sub {
                     return [
                         $_[0]->{metric}->[0][0] . '/'

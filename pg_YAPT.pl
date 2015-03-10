@@ -33,6 +33,7 @@ sub main {
         [ 'ui|u=s',     "override the UI-choice from config.  ", {} ],
         [ 'list|l',     "list all checks and configured UIs",    {} ],
         [ 'uiopts|o=s', "UI-specific options to push down",      {} ],
+        [ 'addcheck|a=s',"add these checks",{}                      ],
         [],
         [
             'deletecache|d',
@@ -55,6 +56,7 @@ sub main {
         ],
         [ 'test|T', "do not connect to the database", {} ],
         [ 'verbose|v', "print additional info. works good with list", {} ],
+        [ 'veryverbose|V', "like verbose.. but worse".{}],
         [ 'help|h',    "print usage message and exit" ],
     );
     print( $usage->text ), exit if $opt->help;
@@ -71,7 +73,6 @@ sub main {
     $utils::config     = undef;
     $utils::configFile = $opt->{config};
     utils::checkAndReloadConfig();
-
 # if we're asked to be reattachable reset the targetfile to cache and load again.
 # because the contents may be blessed, we need to load the defaultconfig first to make
 # sure all includes allready exist.
@@ -105,7 +106,7 @@ sub main {
                   . $doc;
             }
 
-            say " " . $out;
+            say "" . $out;
         }
         say "";
     }
@@ -126,10 +127,10 @@ sub main {
         say "Existing UIs:";
         foreach ( sort keys %{ $utils::config->{UI} } ) {
             my $line = $_;
-            if ( $utils::config->{defaultui} eq $_ ) {
+            if ( $opt->{verbose} and ($utils::config->{defaultui} eq $_ )) {
                 $line = "*" . $line;
             }
-            else { $line = ' ' . $line }
+            elsif ($opt->{verbose}) { $line = ' ' . $line }
             if ( $opt->{verbose} ) {
                 $line = "["
                   . $utils::config->{UI}->{$_}->{template} . "]"
@@ -141,7 +142,8 @@ sub main {
         }
         exit(0);
     }
-
+    push (@{$utils::config->{UI}->{$opt->{ui}}->{checks}},split(",",$opt->{addcheck}) );
+    #use Data::Dumper; say Dumper($utils::config->{UI}->{$opt->{ui}}->{checks} );
     ##### LOOP #####
     # Everyting is set.
     # While the requested UI asks to continue, loop over it.

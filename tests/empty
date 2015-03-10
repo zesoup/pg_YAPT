@@ -1,0 +1,13 @@
+$config = {
+    tests     => 1,
+    defaultui => 'default',
+
+    UI => {
+        default => {
+            template   => "wall",
+            updatetime => 10000,    #ns
+            checks => [ ]
+          }
+
+    }
+};

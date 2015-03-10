@@ -1,0 +1,13 @@
+$config = {
+    tests     => 1,
+    defaultui => 'default',
+
+    UI => {
+        default => {
+            template   => "json",
+            updatetime => 10000,    #ns
+            checks => [ "WAL"] #json mixes results. FIX before more checks are added
+          }
+
+    }
+};

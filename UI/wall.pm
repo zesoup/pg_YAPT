@@ -34,6 +34,7 @@ sub loop {
 # a sighup will work fine.
 
     while ($loopcount--) {
+        $utils::widenoverflow = 0;
         $utils::config->{DB}->commit;
 
         if ( $configAge ne $utils::configAge ) {

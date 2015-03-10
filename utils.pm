@@ -15,6 +15,7 @@ our $configFile;
 our $config;
 our $configAge;
 our $testmode;
+our $widenoverflow;
 
 sub cacheConfig {
     open my $FH, ">", ".cache.pm";
@@ -47,12 +48,16 @@ sub widen {
     my ( $totalWidth, $text, $cnt, $extra, $char ) = @_;
     my $textwidth = length($text) + $extra;        #for |seperator
     my $widthper  = floor( $totalWidth / $cnt );
+    $textwidth -= $widenoverflow;
 
-    my $out =
-        fillwith( $char, floor( ( $widthper / 2 - $textwidth / 2 ) ) )
+    my $widthLeft =floor( $widthper / 2 - $textwidth / 2 );
+    my $widthRight=ceil ( $widthper / 2 - $textwidth / 2 );
+    my $out = 
+        fillwith( $char, $widthLeft )
       . $text
-      . fillwith( $char, ceil( ( $widthper / 2 - $textwidth / 2 ) ) );
-
+      . fillwith( $char, $widthRight );
+    $widenoverflow = $widthLeft+$widthRight;
+    if ($widenoverflow > 0){$widenoverflow = 0};
     return $out;
 }
 
