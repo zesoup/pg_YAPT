@@ -31,12 +31,12 @@
                 doc => "total time of querys. Part of pg_stat_statements!",
                 plugin    => "querycheck",
                 action    => sub {
-                    return [
+                    return [[[
                         sprintf( "%.2f",
                             ($_[0]->{metric}->[0][0] -
                             $_[0]->{oldmetric}->[0][0])/1000 ),
                         0
-                    ];
+                    ]]];
                   }
             },
             "PID" => {
@@ -66,10 +66,10 @@
                     my $walfiles = (
                         hex( substr( $_[0]->{metric}->[0][1], 17, 23 ) ) -
                           hex( substr( $_[0]->{oldmetric}->[0][1], 17, 23 ) ) );
-                    return [
+                    return [[[
                         $walfiles . '|' . sprintf( "%.0f", $walwritten ),
                         $walfiles
-                    ];
+                    ]]];
                   }
             },
             'S/I' => {
@@ -85,13 +85,13 @@
                       $_[0]->{metric}->[0][1] - $_[0]->{oldmetric}->[0][1];
                     my $total = $SEQ + $IDX;
                     if ( $total <= 0 ) { $total = 1; }
-                    return [
+                    return [[[
 
                         int( 10 * $SEQ / $total ) . '/'
                           . int( 10 * $IDX / $total ) . '|'
                           . int( $total / 10000 ) . 'k',
                         0
-                    ];
+                    ]]];
                   }
             },
 
@@ -100,9 +100,9 @@
                 plugin    => "querycheck",
                 querytest => [ [0] ],
                 action    => sub {
-                    return [
+                    return [[[
                         $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0], 0
-                    ];
+                    ]]];
                   }
             },
             UpTime => {
@@ -119,9 +119,9 @@
                 units     => ["m"],
                 doc => "estimate of total existing tuples",
                 action    => sub {
-                    return [
+                    return [[[
                         sprintf( "%.1f", $_[0]->{metric}->[0][0] / 1000000 ), 0
-                    ];
+                    ]]];
                   }
             },
             User => {
@@ -140,11 +140,11 @@ on true;",
                 querytest => [ [ 0, 0 ] ],
                 doc       => " locks[waiting] . Will ignore locks for this backend",
                 action    => sub {
-                    return [
+                    return [[[
                         $_[0]->{metric}->[0][0] . '/'
                           . $_[0]->{metric}->[0][1] . '',
                         floor( $_[0]->{metric}->[0][1] / 5 )
-                    ];
+                    ]]];
                   }
             },
             'RTupT' => {
@@ -157,7 +157,7 @@ doc => "Read Tuples from Table",
                 action    => sub {
                     my $TBL =
                       $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
-                    return [ floor( $TBL / 1.0 ), 0 ];
+                    return [[[ int( $TBL  ), 0 ]]];
                   }
             },
             'I/U/D' => {
@@ -177,17 +177,25 @@ doc => "Read Tuples from Table",
                     $INS = int( 10 * $INS / $total );
                     $UPD = int( 10 * $UPD / $total );
                     $DEL = int( 10 * $DEL / $total );
-                    return [
+                    return [[[
 
                         $INS . '/'
                           . $UPD . '/'
                           . $DEL . '|'
                           . int( $total / 10000 ) . 'k',
                         0
-                    ];
+                    ]]];
                   }
 
             },
+            'Act' =>{
+             query=>"select datname,usename,
+CASE WHEN state = 'idle in transaction' THEN 'IIT' ELSE state END
+
+state, pid, application_name, waiting, round(extract(epoch from now() -query_start)) from pg_stat_activity order by state_change, waiting desc;",
+             plugin=>"querycheck",
+            units=>[]
+             },
             'SIZE' => {
                 query =>
 "select round(sum(pg_database_size(datname))/(1024*1024*1024),1) from pg_database;",
@@ -205,7 +213,7 @@ doc => "Read Tuples from Index",
                 action    => sub {
                     my $IDX =
                       $_[0]->{metric}->[0][0] - $_[0]->{oldmetric}->[0][0];
-                    return [ floor( $IDX / 1.0 ), 0 ];
+                    return [[[ int( $IDX ), 0 ]]];
                   }
             },
             'AnlzAge' => {
@@ -228,7 +236,7 @@ doc => "Age of oldest Analyze",
 doc => "shmem accessed for systables in MB",
                 querytest => [ [0] ],
                 action    => sub {
-                    return [
+                    return [[[
                         sprintf(
                             "%.f",
                             (
@@ -237,7 +245,7 @@ doc => "shmem accessed for systables in MB",
                             ) / ( ( 1 / 8 ) * 1000 )
                         ),
                         0
-                    ];
+                    ]]];
                   }
             },
 
@@ -249,7 +257,7 @@ doc => "shmem accessed for systables in MB",
                 querytest => [ [0] ],
 doc => "shmem accessed for usertables in MB",
                 action    => sub {
-                    return [
+                    return [[[
                         sprintf(
                             "%.f",
                             (
@@ -258,7 +266,7 @@ doc => "shmem accessed for usertables in MB",
                             ) / ( ( 1 / 8 ) * 1000 )
                         ),
                         0
-                    ];
+                    ]]];
                   }
               }
 

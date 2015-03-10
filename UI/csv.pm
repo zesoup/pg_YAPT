@@ -51,7 +51,7 @@ sub loop {
             $currentCheck->execute();
             my $tup = $currentCheck->{returnVal};
             if ( $firstcheck++ ) { $output .= $separator; }
-            $output .= $tup->[0] . $currentCheck->{units}[0];
+            $output .= $tup->[0][0][0] . $currentCheck->{units}[0];
         }
 
         unless ($loopagain) { say $output; }

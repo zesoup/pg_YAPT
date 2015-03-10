@@ -26,7 +26,20 @@ sub execute {
         $obj->{oldmetric} = $obj->{metric};
     }
     if ( exists $obj->{action} ) { $obj->{returnVal} = $obj->{action}($obj); }
-    else { $obj->{returnVal} = [ ( $obj->{metric}->[0][0], 0 ) ]; }
+    else { 
+$obj->{returnVal} = [];
+#use Data::Dumper; say STDERR Dumper($obj->{metric});
+foreach my $row (@{$obj->{metric}}){
+my $rowArr = [];
+foreach my $val (@{$row}){
+push(@{$rowArr},[$val,0]);
+}
+push( @{$obj->{returnVal}}, $rowArr ); 
+
+
+}
+#use Data::Dumper; say STDERR Dumper($obj->{returnVal});
+}
     $obj->{oldmetric} = $obj->{metric};
     utils::stampend($obj);
     if ((exists $obj->{config}->{timing}) and

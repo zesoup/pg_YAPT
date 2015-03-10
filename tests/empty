@@ -5,7 +5,7 @@ $config = {
     UI => {
         default => {
             template   => "wall",
-            updatetime => 10000,    #ns
+            updatetime => 1000,    #ns
             checks => [ ]
           }
 

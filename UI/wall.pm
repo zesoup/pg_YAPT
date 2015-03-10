@@ -71,10 +71,9 @@ sub loop {
             }
             $currentCheck->execute();
             my $tup = $currentCheck->{returnVal};
-
-            my $metric = $tup->[0];
+            my $metric = $tup->[0][0][0];
             my $unit   = $currentCheck->{units}[0] or "";
-            my $status = $tup->[1];
+            my $status = $tup->[0][0][1];
             my $clr    = "White";
             if ( int($status) >= 1 ) { $clr = "Bright_Yellow"; }
             if ( int($status) >= 2 ) { $clr = "Bright_Red"; }

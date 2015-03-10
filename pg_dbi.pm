@@ -71,7 +71,7 @@ sub returnAndStore {
     $stm->execute() or goto RETRY;
 
     my $out = $stm->fetchall_arrayref() or goto RETRY;
-    my ( $ends, $endms ) = gettimeofday;
+  my ( $ends, $endms ) = gettimeofday;
     unless ( exists $config->{config}->{DB}->{worsed} ) {
         $config->{config}->{DB}->{worsed} = 0;
     }

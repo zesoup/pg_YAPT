@@ -22,6 +22,10 @@ $config = {
                 "TotRows", "S/I", "I/U/D"
             ]
         },
+        list =>{
+            template => "list",
+            checks => [ "Act" ]
+         },
         wlwork => {
             template   => "wall",
             updatetime => 1000000,

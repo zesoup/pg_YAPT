@@ -36,7 +36,7 @@ sub loop {
             }
             $currentCheck->execute();
             my $tup = $currentCheck->{returnVal};
-            $output->{$_} = $tup;
+            $output->{$_} = $tup->[0][0];
         }
     }
     my $json_text = encode_json $output;

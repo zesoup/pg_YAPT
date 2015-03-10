@@ -48,16 +48,18 @@ sub widen {
     my ( $totalWidth, $text, $cnt, $extra, $char ) = @_;
     my $textwidth = length($text) + $extra;        #for |seperator
     my $widthper  = floor( $totalWidth / $cnt );
-    $textwidth -= $widenoverflow;
 
-    my $widthLeft =floor( $widthper / 2 - $textwidth / 2 );
-    my $widthRight=ceil ( $widthper / 2 - $textwidth / 2 );
-    my $out = 
-        fillwith( $char, $widthLeft )
-      . $text
-      . fillwith( $char, $widthRight );
-    $widenoverflow = $widthLeft+$widthRight;
-    if ($widenoverflow > 0){$widenoverflow = 0};
+    if ( defined $widenoverflow ) { $textwidth -= $widenoverflow; }
+
+    my $widthLeft  = floor( $widthper / 2 - $textwidth / 2 );
+    my $widthRight = ceil( $widthper / 2 - $textwidth / 2 );
+    my $out =
+      fillwith( $char, $widthLeft ) . $text . fillwith( $char, $widthRight );
+
+    if ( defined $widenoverflow ) {
+        $widenoverflow = $widthLeft + $widthRight;
+        if ( $widenoverflow > 0 ) { $widenoverflow = 0 }
+    }
     return $out;
 }
 
@@ -73,24 +75,25 @@ sub fillwith {
     return $out;
 }
 
-sub storePID{
+sub storePID {
     open my $pidFH, ">", "pid";
     print $pidFH $$;
     close $pidFH;
 }
-sub removePID{
-unlink "pid";
+
+sub removePID {
+    unlink "pid";
 }
 
-sub getValueOfOptOrDefault{
-    my ($opts, $val,$default)= @_;
-    if (($opts) and ($val) and ($opts =~ $val) ) {
-            my $start = index( $opts, $val ) + length($val);
-            my $end = index( $opts, " ", $start );
+sub getValueOfOptOrDefault {
+    my ( $opts, $val, $default ) = @_;
+    if ( ($opts) and ($val) and ( $opts =~ $val ) ) {
+        my $start = index( $opts, $val ) + length($val);
+        my $end = index( $opts, " ", $start );
 
-            if ( $end < 0 ){$end = 999};
-            return int( substr( $opts, $start, $end-$start ) );
-        }
+        if ( $end < 0 ) { $end = 999 }
+        return int( substr( $opts, $start, $end - $start ) );
+    }
     return $default;
 }
 
@@ -167,8 +170,6 @@ sub reloadConf {
 
     return $config;
 }
-
-
 
 sub checkAndReloadConfig {
     open my $FH, "<", $configFile

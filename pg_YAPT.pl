@@ -142,7 +142,8 @@ sub main {
         }
         exit(0);
     }
-    push (@{$utils::config->{UI}->{$opt->{ui}}->{checks}},split(",",$opt->{addcheck}) );
+    if(exists $opt->{addcheck}){
+    push (@{$utils::config->{UI}->{$opt->{ui}}->{checks}},split(",",$opt->{addcheck}) );}
     #use Data::Dumper; say Dumper($utils::config->{UI}->{$opt->{ui}}->{checks} );
     ##### LOOP #####
     # Everyting is set.
