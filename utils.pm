@@ -6,6 +6,7 @@ use File::stat;
 use File::Slurp;
 use POSIX;
 
+use Config::IniFiles;
 use Digest::MD5 qw(md5_hex);
 
 use pg_dbi;
@@ -138,18 +139,19 @@ sub reloadConf {
         while ( my $f = readdir $checkdir ) {
             my $checks;
             if ( $f =~ /^\.+/ ) { next; }
-            eval(
-                read_file("checks/$f")
-                  or die "could not read checks"
-            ) or die "could not parse checks";
-            $config->{checks} =
-              $checks;    # Jep, it will break for multiple files. FIX
+            $checks = Config::IniFiles->new( -file => "checks/$f") or die "cantLoad" ;
+            foreach my $chk ( $checks->Sections() ) {
+                $config->{checks}->{$chk} = {};
+                foreach my $param ( $checks->Parameters($chk) ) {
+                    $config->{checks}->{$chk}->{$param} =
+                      eval( $checks->val( $chk, $param ) )
+                      or ( say "parsing $param for $chk failed" and next );
+                }
+            }
         }
         closedir $checkdir;
     }
-
     $config->{DB} = pg_dbi::new( config => $config );
-
    # for each check, load the required plugin.
    # abit messy but require shouldnt reload multiple times - we're fine for now.
     foreach my $key ( keys %{ $config->{checks} } ) {

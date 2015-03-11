@@ -6,7 +6,8 @@ $config = {
     database => {
         maxAttempts    => 9999999,
         reconnectdelay => 0.5,
-        connection => "host=127.0.0.1;dbname=postgres;application_name=pg_YAPT"
+          connection=>"host=localhost;dbname=postgres; application_name=pg_YAPT",
+#        connection => "host=192.168.122.140;user=postgres;dbname=otrs2;application_name=pg_YAPT"
     },
     defaultui => 'default',
 
@@ -30,14 +31,14 @@ $config = {
             template   => "wall",
             updatetime => 1000000,
             checks     => [
-                "WAL",   "txID",  "SysBlk", "BlkAcc", "QTime", "Locks",
+                "WAL", "User",  "txID",  "SysBlk", "BlkAcc", "QTime", "CTime","PTime", "ETime", "Locks",
                 "RTupT", "RTupI", "S/I",    "I/U/D"
             ]
         },
         wlusers => {
             template   => "wall",
             updatetime => 1000000,                      #ns
-            checks     => [ "User", "txID", "Locks" ]
+            checks     => [ "QTime" ]
         },
         wlDML => {
             template   => "wall",
