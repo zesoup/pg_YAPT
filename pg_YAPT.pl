@@ -34,6 +34,7 @@ sub main {
         [ 'list|l',     "list all checks and configured UIs",    {} ],
         [ 'uiopts|o=s', "UI-specific options to push down",      {} ],
         [ 'addcheck|a=s',"add these checks",{}                      ],
+        [ 'dbopts|d=s',   "use this connectionstring",             {} ],
         [],
         [
             'deletecache|d',
@@ -56,7 +57,7 @@ sub main {
         ],
         [ 'test|T', "do not connect to the database", {} ],
         [ 'verbose|v', "print additional info. works good with list", {} ],
-        [ 'veryverbose|V', "like verbose.. but worse".{}],
+        [ 'veryverbose|V', "like verbose.. but worse (todo)",{}],
         [ 'help|h',    "print usage message and exit" ],
     );
     print( $usage->text ), exit if $opt->help;
@@ -86,6 +87,7 @@ sub main {
         $utils::config->{Reattachable} = 1;
     }
     if ($opt->{test}){$utils::config->{tests} = 1;};
+    if ($opt->{dbopts}){$utils::config->{database}->{connection}=$opt->{dbopts}}
     # config is now loaded. check if there's an override for the UI.
     # If not, reset the $opt->{ui} value with the default.
     if ( $opt->{list} ) {
