@@ -27,7 +27,7 @@ sub execute {
     }
     if   ( exists $obj->{action} ) { $obj->{returnVal} = $obj->{action}($obj); }
     else                              
-    { $obj->{returnVal} = [($obj->{metric}->[0][0],0)]; }
+    { $obj->{returnVal} = [[[$obj->{metric},0]]]; }
     $obj->{oldmetric} = $obj->{metric};
     return 0;
 }

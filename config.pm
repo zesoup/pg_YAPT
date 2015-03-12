@@ -18,7 +18,7 @@ $config = {
             template   => "wall",
             updatetime => 1000000,    #ns
             checks     => [
-                "WAL", "SIZE", "UpTime",
+                "Time","WAL", "SIZE", "UpTime",
                 "TotRows", "S/I", "I/U/D"
             ]
         },
@@ -30,7 +30,7 @@ $config = {
             template   => "wall",
             updatetime => 1000000,
             checks     => [
-                "WAL", "User",  "txID",  "SysBlk", "BlkAcc", "QTime", "CTime","PTime", "ETime", "Locks",
+                "WAL", "User",  "txID",  "SysBlk", "BlkAcc",  "Locks",
                 "RTupT", "RTupI", "S/I",    "I/U/D"
             ]
         },
