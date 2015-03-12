@@ -22,6 +22,9 @@ sub execute {
     utils::stampbegin($obj);
     $obj->{metric} =
       $obj->{config}->{DB}->returnAndStore( $obj->{query}, $obj->{name} );
+    unless (defined $obj->{metric}){
+    $obj->{metric} = $obj->{querytest};
+    }
     unless ( exists $obj->{oldmetric} ) {
         $obj->{oldmetric} = $obj->{metric};
     }
