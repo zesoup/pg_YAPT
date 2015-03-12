@@ -19,7 +19,7 @@ foreach my $sect ( keys $checks ) {
         chomp $line;
         chomp $line;
         $line = substr( $line, 8, -1 );
-        $line =~ s/\R//g;
+        unless (($attr eq "query")or ($attr eq "action") ){$line =~ s/\R//g;}
         $cfg->newval( $sect, $attr, $line ) or say $_;
 
     }
