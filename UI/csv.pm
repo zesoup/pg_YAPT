@@ -58,7 +58,7 @@ sub loop {
 
         #at this point, loopagain is only set if current values are not valid.
 
-        if ( $config->{Reattachable} == 1 ) { utils::cacheConfig($config); }
+        if ( $config->{Reattachable} == 1 ) { utils::cacheChecks(); }
 
         if ( $UIopts =~ "repeat" ) { $loopagain = 1 }
         $utils::config->{DB}->commit;

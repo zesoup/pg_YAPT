@@ -40,7 +40,7 @@ sub loop {
         }
     }
     my $json_text = encode_json $output;
-    if ( $config->{Reattachable} == 1 ) { utils::cacheConfig($config); }
+    if ( $config->{Reattachable} == 1 ) { utils::cacheChecks(); }
 
     say $json_text;
 

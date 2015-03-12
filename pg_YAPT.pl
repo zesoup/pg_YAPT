@@ -80,10 +80,8 @@ sub main {
 #
 # once done, reset the targetfile again to provide proper reload-functionality on sighup.
     if ( $opt->{reattachable} ) {
-        $utils::configFile = $opt->{cache};
-        utils::checkAndReloadConfig();
-
-        $utils::configFile = $opt->{config};
+        $utils::cacheFile = $opt->{cache};
+        utils::loadCache();
         $utils::config->{Reattachable} = 1;
     }
     if ($opt->{test}){$utils::config->{tests} = 1;};

@@ -15,26 +15,40 @@ use Time::HiRes qw(usleep gettimeofday);
 our $configFile;
 our $config;
 our $configAge;
+
+our $cacheFile;
+
 our $testmode;
 our $widenoverflow;
 
-sub cacheConfig {
-    open my $FH, ">", ".cache.pm";
+sub cacheChecks {
+    open my $FH, ">", $cacheFile;
     use Data::Dumper;
-    $Data::Dumper::Deparse  = 1;
-    $Data::Dumper::Purity   = 1;
-    $Data::Dumper::Freezer  = sub { bless $_, ".."; };
-    $Data::Dumper::Varname  = "config";
-    $Data::Dumper::Sortkeys = sub {
-        my $out = [];
-        foreach ( keys %{ $_[0] } ) {
-            unless ( $_ eq 'DB' ) { push( @{$out}, $_ ) }
-        }
-        return $out;
-    };
-    say $FH Dumper($config);
+    $Data::Dumper::Deepcopy = 1;
+    my $cache = {};
+    foreach my $check ( keys %{ $config->{checks} } ) {
+        $cache->{$check} = {};
+        $cache->{$check}->{metric} = $config->{checks}->{$check}->{metric};
+        $cache->{$check}->{oldmetric} =
+          $config->{checks}->{$check}->{oldmetric};
+    }
+
+    say $FH Dumper($cache);
     close $FH;
     return 0;
+}
+
+sub loadCache {
+    my $VAR1;
+    open( my $FH, "<", $cacheFile )
+      || ( ErrLog( "could not read cache", "UTILS", "WARN" ) and return );
+    eval( join( '', <$FH> ) )
+      || ( ErrLog( "could not parse cache", "UTILS", "WARN" ) and return );
+    close $FH;
+    foreach my $check ( keys %{$VAR1} ) {
+        $config->{checks}->{$check}->{metric}    = $VAR1->{$check}->{metric};
+        $config->{checks}->{$check}->{oldmetric} = $VAR1->{$check}->{oldmetric};
+    }
 }
 
 sub widen {
@@ -113,45 +127,41 @@ sub getMD5ofFile {
 sub reloadConf {
     my $configfile = shift;
 
-    # cachefiles will name the config differently. (namely $config1)
-    my $config1 = undef;
-
     # a new configuration will be deployed, so if any db-connections exist,
     # remove them.
     if ( exists $config->{DB} ) { $config->{DB}->{dbh}->disconnect; }
 
-    # read the configurationfile.(or cache for that matter)
+    # read the configurationfile.
     $configAge = localtime;
-    eval( read_file($configfile) or die "could not read config" )
-      or die "could not parse config";
+    open( my $FH, "<", $configFile )
+      || ( ErrLog( "could not read config", "UTILS", "FATAL" ) and exit 1 );
+
+    eval( join( '', <$FH> ) ) or die "could not parse config";
+    close $FH;
 
     # did we just load a config or a cachefile?
     # cachefiles provide $config1
-    if ($config1) {
-        $config = $config1;
-    }
-    else {
-        # If it's not a cachefile, check-configurations need to be provided.
-        # They reside within configs in the checks/ folder.
-        # Load all of 'em.
-        opendir my $checkdir,
-          "checks" || die "Can't open check-directory: $!\n";
-        while ( my $f = readdir $checkdir ) {
-            my $checks;
-            if ( $f =~ /^\.+/ ) { next; }
-            $checks = Config::IniFiles->new( -file => "checks/$f") or die "cantLoad" ;
-            foreach my $chk ( $checks->Sections() ) {
-                $config->{checks}->{$chk} = {};
-                foreach my $param ( $checks->Parameters($chk) ) {
-                    $config->{checks}->{$chk}->{$param} =
-                      eval( $checks->val( $chk, $param ) )
-                      or ( say "parsing $param for $chk failed" and next );
-                }
+    # If it's not a cachefile, check-configurations need to be provided.
+    # They reside within configs in the checks/ folder.
+    # Load all of 'em.
+    opendir my $checkdir, "checks" || die "Can't open check-directory: $!\n";
+    while ( my $f = readdir $checkdir ) {
+        my $checks;
+        if ( $f =~ /^\.+/ ) { next; }
+        $checks = Config::IniFiles->new( -file => "checks/$f" )
+          or die "cantLoad";
+        foreach my $chk ( $checks->Sections() ) {
+            $config->{checks}->{$chk} = {};
+            foreach my $param ( $checks->Parameters($chk) ) {
+                $config->{checks}->{$chk}->{$param} =
+                  eval( $checks->val( $chk, $param ) )
+                  or ( say "parsing $param for $chk failed" and next );
             }
         }
-        closedir $checkdir;
     }
+    closedir $checkdir;
     $config->{DB} = pg_dbi::new( config => $config );
+
    # for each check, load the required plugin.
    # abit messy but require shouldnt reload multiple times - we're fine for now.
     foreach my $key ( keys %{ $config->{checks} } ) {
