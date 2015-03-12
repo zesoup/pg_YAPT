@@ -7,7 +7,6 @@ $config = {
         maxAttempts    => 9999999,
         reconnectdelay => 0.5,
           connection=>"host=localhost;dbname=postgres; application_name=pg_YAPT",
-#        connection => "host=192.168.122.140;user=postgres;dbname=otrs2;application_name=pg_YAPT"
     },
     defaultui => 'default',
 
