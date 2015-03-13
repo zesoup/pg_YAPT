@@ -3,6 +3,8 @@ $config = {
     #Main Information and Params
     version  => "2.0",
     tests    => 0,
+    #delimiter=> " ",
+    loglevel=> "INFO",
     database => {
         maxAttempts    => 9999999,
         reconnectdelay => 0.5,
@@ -19,7 +21,7 @@ $config = {
             updatetime => 1000000,    #ns
             checks     => [
                 "Time","WAL", "SIZE", "UpTime",
-                "TotRows", "S/I", "I/U/D"
+                "TotRows", "S/I", "I/U/D","User", "txID"
             ]
         },
         list =>{
@@ -30,14 +32,14 @@ $config = {
             template   => "wall",
             updatetime => 1000000,
             checks     => [
-                "WAL", "User",  "txID",  "SysBlk", "BlkAcc",  "Locks",
+                "WAL",  "txID",  "SysBlk", "BlkAcc",  "Locks",
                 "RTupT", "RTupI", "S/I",    "I/U/D"
             ]
         },
         wlusers => {
             template   => "wall",
             updatetime => 1000000,                      #ns
-            checks     => [ "QTime" ]
+            checks     => [ "User", "Locks" ]
         },
         wlDML => {
             template   => "wall",

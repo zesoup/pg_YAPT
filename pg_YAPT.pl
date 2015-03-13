@@ -6,11 +6,14 @@ use 5.20.1;
 
 # Set includepath to the local position. This Program will rely heavily on
 # local files.
-use FindBin;
-use lib $FindBin::Bin;
+#use FindBin;
+#use lib $FindBin::Bin;
 
+use File::Basename;
 # Utils provide basic tools and utils. e.G Config-Handle.
+use lib ( dirname $0); #wherever pg_YAPT is, thats where the includes are!
 use utils;
+$utils::checkDirectory = (dirname $0)."/checks"; #dirty for now
 
 # Option Parser
 use Getopt::Long;
@@ -23,6 +26,8 @@ $SIG{HUP} = sub {
     return;
 };
 
+#say $ENV{PWD};
+#say dirname $0;
 sub main {
     my $version = "0.0.4";
 
@@ -47,8 +52,8 @@ sub main {
             { default => 0 }
         ],
         [],
-        [ 'config|c=s', "config to use",    { default => "config.pm" } ],
-        [ 'cache|C=s',  "cacheFile to use", { default => ".cache.pm" } ],
+        [ 'config|c=s', "config to use",    { default => (dirname $0)."/config.pm" } ],
+        [ 'cache|C=s',  "cacheFile to use", { default => (dirname $0)."/.cache.pm" } ],
         [],
         [
             'timing|t=i',
@@ -56,19 +61,18 @@ sub main {
             { default => -1 }
         ],
         [ 'test|T', "do not connect to the database", {} ],
+        [ 'sync|S', "try to start on full seconds", {default=>0}    ],
         [ 'verbose|v', "print additional info. works good with list", {} ],
         [ 'veryverbose|V', "like verbose.. but worse (todo)",{}],
         [ 'help|h',    "print usage message and exit" ],
     );
     print( $usage->text ), exit if $opt->help;
     say "pg_YAPT V$version" if $opt->{verbose};
-
     # delete the cachefile if asked to
     # doesnt rely on the config, so we can do it very early on
     if ( $opt->{deletecache} ) {
         unlink $opt->{cache};
     }
-
     # now handle the Config.
     # reset the utils::config, set the targetfiles properly and force a reload.
     $utils::config     = undef;
@@ -110,10 +114,9 @@ sub main {
         }
         say "";
     }
-
     unless ( exists $opt->{ui} ) { $opt->{ui} = $utils::config->{defaultui}; }
-    if ( exists $opt->{timing} ) { $utils::config->{timing} = $opt->{timing}; }
-
+    if ( exists $opt->{timing} ) { $utils::config->{timing} = $opt->{timing};}
+    if ( exists $opt->{sync} ) { $utils::config->{sync}   = $opt->{sync};  }
     # Now check if the requested UI actually exists.
     if ( !exists $utils::config->{UI}->{ $opt->{ui} } ) {
         utils::ErrLog( "Unknown UI:" . $opt->{ui}, "main", "FATAL" );

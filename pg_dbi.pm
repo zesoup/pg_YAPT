@@ -67,6 +67,7 @@ sub returnAndStore {
 
     $attempts++;
     goto RETRY unless ( UNIVERSAL::isa( $config->{dbh}, "DBI::db" ) );
+    utils::ErrLog( "$query" , "$cachename via DB", "debug");
     my $stm = $config->{dbh}->prepare($query) or goto RETRY;
     $stm->execute() or goto RETRY;
 

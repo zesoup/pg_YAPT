@@ -7,7 +7,7 @@ Yet another postgres top
 ##Install:
 Install dependencies for debian(jessie):
 
-    apt-get install libfile-slurp-perl libgetopt-long-descriptive-perl libconfig-inifiles-perl
+    apt-get install libgetopt-long-descriptive-perl libconfig-inifiles-perl
 
 
 Some checks are built for special postgres addons.

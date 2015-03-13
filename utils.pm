@@ -16,10 +16,15 @@ our $configFile;
 our $config;
 our $configAge;
 
+our $checkDirectory;
+
 our $cacheFile;
+
+
 
 our $testmode;
 our $widenoverflow;
+
 
 sub cacheChecks {
     open my $FH, ">", $cacheFile;
@@ -136,7 +141,7 @@ sub reloadConf {
     open( my $FH, "<", $configFile )
       || ( ErrLog( "could not read config", "UTILS", "FATAL" ) and exit 1 );
 
-    eval( join( '', <$FH> ) ) or die "could not parse config";
+    eval( join( '', <$FH> ) ) || ( ErrLog( "could not parse config", "UTILS", "FATAL") and exit 1);
     close $FH;
 
     # did we just load a config or a cachefile?
@@ -144,11 +149,11 @@ sub reloadConf {
     # If it's not a cachefile, check-configurations need to be provided.
     # They reside within configs in the checks/ folder.
     # Load all of 'em.
-    opendir my $checkdir, "checks" || die "Can't open check-directory: $!\n";
+    opendir my $checkdir, $checkDirectory || die "Can't open check-directory: $!\n";
     while ( my $f = readdir $checkdir ) {
         my $checks;
         if ( $f =~ /^\.+/ ) { next; }
-        $checks = Config::IniFiles->new( -file => "checks/$f" )
+        $checks = Config::IniFiles->new( -file => "$checkDirectory/$f" )
           or die "cantLoad";
         foreach my $chk ( $checks->Sections() ) {
             $config->{checks}->{$chk} = {};
@@ -213,6 +218,11 @@ sub stampend {
 
 sub ErrLog {
     my ( $msg, $sender, $type ) = @_;
+    my $logtypes = ["FATAL","WARN","INFO","debug"];
+    foreach ( @{$logtypes} ){
+    if ($type eq $_){last;}
+    if ((exists$config->{loglevel})and($config->{loglevel} eq $_)){return}
+    };
     say STDERR "[" . localtime . "] " . $type . " " . $sender . ":" . $msg;
 }
 

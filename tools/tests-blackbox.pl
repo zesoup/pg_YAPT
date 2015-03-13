@@ -6,6 +6,7 @@ use 5.20.1;
 my $testdir = "tests";
 my $result  = "RESULT";
 my $expect  = "EXPECTED";
+my $yapt = "perl ../pg_YAPT.pl";
 
 #$result = $expect;
 
@@ -20,7 +21,7 @@ while ( readdir $dh ) {
     if ( $_ =~ /\.RESULT/ )   { next; }
 
     #    print "TESTING $_";
-`perl pg_YAPT.pl -o "loops=3 width=50" --config=$testdir/$_ 2>&1 > $testdir/$_.$result`;
+`$yapt -o "loops=3 width=50" --config=$testdir/$_ 2>&1 > $testdir/$_.$result`;
     if ($?) { die "error with conf $_"; }
     my $diff = `diff $testdir/$_.$result $testdir/$_.$expect`;
     if   ($?) { say "[ ] $_ Failed"; $failed++; }
@@ -31,7 +32,7 @@ closedir $dh;
 say "Testing all Checks:";
 
 my @allChecks =
-  split( "\n", `perl pg_YAPT.pl --config=$testdir/empty -l 2>>/dev/null` );
+  split( "\n", `$yapt --config=$testdir/empty -l 2>>/dev/null` );
 my $skipline = 1;
 my $type     = "CHECK";
 
@@ -50,12 +51,12 @@ foreach (@allChecks) {
     $_ =~ tr/"\///d;
      
     if ( $type eq "CHECK" ) {
-`perl pg_YAPT.pl -o "loops=3 width=50" -a "$raw" --config=$testdir/empty 2>&1 > $testdir/$type.$_.$result`;
+`$yapt -o "loops=3 width=50" -a "$raw" --config=$testdir/empty 2>&1 > $testdir/$type.$_.$result`;
 #if ($?) { die "error $raw"; }
    }
 
     if ( $type eq "UI" ) {
-`perl pg_YAPT.pl -o "loops=3 width=50" -u "$raw"  --config=$testdir/empty 2>&1 > $testdir/$type.$_.$result`;
+`$yapt -o "loops=3 width=50" -u "$raw"  --config=$testdir/empty 2>&1 > $testdir/$type.$_.$result`;
 #if ($?) { die "error $raw"; }
     }
 

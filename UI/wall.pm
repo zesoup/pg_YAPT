@@ -25,6 +25,7 @@ sub loop {
     my $configAge = $utils::configAge;
     my $loopcount = utils::getValueOfOptOrDefault($opts, "loops=",-1);
     my $fixwidth = utils::getValueOfOptOrDefault($opts,"width=",-1);
+    my $separator = color("bright_yellow") . '│' . color("reset") unless $utils::config->{delimiter};
     $obj->{hashsize} =
       @{ $config->{UI}->{$name}->{checks} };
 
@@ -51,7 +52,7 @@ sub loop {
         unless ( $config->{main}->{i}++ % ( $hchar - 1 ) ) {
             my $first = 0;
             foreach ( @{ $obj->{checks} } ) {
-                if ( $first++ ) { $line .= color("bright_yellow") . '│' }
+                if ( $first++ ) { $line .= $separator; }
                 $line .=
                     color("bright_green")
                   . utils::widen( $wchar, $_, $obj->{hashsize}, 1, " " )
@@ -67,7 +68,7 @@ sub loop {
 
             my $currentCheck = $config->{checks}->{$_};
             if ( ( ++$i != 1 ) and ( $i - 1 != $obj->{hashsize} ) ) {
-                $line .= color("bright_yellow") . '│' . color("reset");
+                $line .= $separator;
             }
             $currentCheck->execute();
             my $tup = $currentCheck->{returnVal};
@@ -90,8 +91,17 @@ sub loop {
         $|    = 1;
 
         #$utils::config->{DB}->commit;
+        my $now = gettimeofday;
         my $timetosleep =
-          ( $obj->{updatetime} - ( gettimeofday- $linestart ) * 1000000 );
+          ( $obj->{updatetime} - ( $now- $linestart ) * 1000000 );
+        if ($utils::config->{sync}){
+       my $sleepfix = ($now * 1000)% ($obj->{updatetime}/1000) ;
+       if ($sleepfix > $obj->{updatetime}/2.0){$sleepfix = -( $obj->{updatetime}/1000 -$sleepfix);}
+       $timetosleep = $timetosleep - 300*$sleepfix;
+       
+}
+
+
         if ( $timetosleep < 0 ) {
             utils::ErrLog( "Queries take too long for loop!", "WALL", "WARN" );
             $timetosleep = 0;
