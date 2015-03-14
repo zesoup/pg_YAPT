@@ -23,7 +23,7 @@ sub new {
 sub init {
     if ( $_[0]->{tests} ) { return undef; }
     $_[0]->{DB}->{connected} = 1;
-    my $dbh = DBI->connect( 'DBI:Pg:' . $_[0]->{database}->{connection},
+    my $dbh = DBI->connect( 'DBI:Pg:' . $_[0]->{database}->{connection}."; application_name=pg_YAPT",
         "", "", { PrintError => 0, } )
       or
       utils::ErrLog( "Couldnt connect to DB!\n" . $DBI::errstr, "DB", "FATAL" );

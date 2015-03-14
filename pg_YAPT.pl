@@ -8,12 +8,12 @@ use 5.20.1;
 # local files.
 #use FindBin;
 #use lib $FindBin::Bin;
-
 use File::Basename;
 # Utils provide basic tools and utils. e.G Config-Handle.
 use lib ( dirname $0); #wherever pg_YAPT is, thats where the includes are!
 use utils;
 $utils::checkDirectory = (dirname $0)."/checks"; #dirty for now
+
 
 # Option Parser
 use Getopt::Long;
@@ -42,7 +42,7 @@ sub main {
         [ 'dbopts|d=s',   "use this connectionstring",             {} ],
         [],
         [
-            'deletecache|d',
+            'deletecache|D',
             "delete cache. necessary if configs changed.",
             { default => 0 }
         ],
@@ -89,7 +89,7 @@ sub main {
         $utils::config->{Reattachable} = 1;
     }
     if ($opt->{test}){$utils::config->{tests} = 1;};
-    if ($opt->{dbopts}){$utils::config->{database}->{connection}=$opt->{dbopts}}
+    if (exists $opt->{dbopts}){$utils::config->{database}->{connection}=$opt->{dbopts}}
     # config is now loaded. check if there's an override for the UI.
     # If not, reset the $opt->{ui} value with the default.
     if ( $opt->{list} ) {

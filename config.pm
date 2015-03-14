@@ -6,9 +6,9 @@ $config = {
     #delimiter=> " ",
     loglevel=> "INFO",
     database => {
-        maxAttempts    => 9999999,
+        maxAttempts    => 3,
         reconnectdelay => 0.5,
-          connection=>"port=5432;host=localhost;dbname=postgres; application_name=pg_YAPT",
+          connection=>"port=5432;host=localhost;dbname=postgres;",
     },
     defaultui => 'default',
 
@@ -24,6 +24,10 @@ $config = {
                 "TotRows", "S/I", "I/U/D","User", "txID"
             ]
         },
+        curses =>{
+            template=> "curses",
+            checks =>["User"]
+           },
         list =>{
             template => "list",
             checks => [ "Act" ]

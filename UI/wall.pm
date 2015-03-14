@@ -90,7 +90,7 @@ sub loop {
         $line = "\n";
         $|    = 1;
 
-        #$utils::config->{DB}->commit;
+        $utils::config->{DB}->commit;# this commit will prevent idle_in_transaction marks.
         my $now = gettimeofday;
         my $timetosleep =
           ( $obj->{updatetime} - ( $now- $linestart ) * 1000000 );
