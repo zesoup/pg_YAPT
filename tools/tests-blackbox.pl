@@ -51,7 +51,7 @@ foreach (@allChecks) {
     $_ =~ tr/"\///d;
      
     if ( $type eq "CHECK" ) {
-`$yapt -o "loops=3 width=50" -a "$raw" --config=$testdir/empty 2>&1 > $testdir/$type.$_.$result`;
+`$yapt -o "loops=3 width=50" -a "{check=>'$raw'}" --config=$testdir/empty 2>&1 > $testdir/$type.$_.$result`;
 #if ($?) { die "error $raw"; }
    }
 

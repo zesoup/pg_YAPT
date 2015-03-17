@@ -5,9 +5,10 @@ package curses;
 use Time::HiRes qw(usleep nanosleep);
 use Term::ReadKey;
 use POSIX;
-use Term::ANSIColor;
-use utils;
+use utf8;
 
+use utils;
+use Curses;
 use Curses::UI;
 
 sub new {
@@ -24,74 +25,91 @@ sub exitCurses {
 }
 
 sub loop {
-my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
+    my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
 
     my ( $obj, $config ) = @_;
     my $output = {};
     my $cui = new Curses::UI( -color_support => 1 );
 
-    my $i = 0;
     my $window = $cui->add( 'window1', 'Window', -border => 0, );
 
-
-    my $stat = $window->add(
-'status','Label',
--border=>0,
--width=>$wchar,
--textalignment=>'middle',
--text=>''
-);
-    my $lab1 = $window->add(
-        'label1', 'Label',
-        -width => $wchar/2,
-        -border=>0,
-        -padtop=>1,
-        -padleft=>0,
-        -textalignment=>'right',
-        -text  => '',
+    my $pinglab = $window->add(
+        'ping', 'Label',
+        -border => 0,
+        -width  => 5,
+        -text   => ''
     );
 
-    my $i = 0;
-    my $ping = 0;
-    sub displayTime {
-       my $metric;
-        foreach ( @{ $obj->{checks} } ) {
+    my $stat = $window->add(
+        'status', 'Label',
+        -border        => 0,
+        -width         => $wchar,
+        -textalignment => 'middle',
+        -text          => ''
+    );
 
+    my $bars   = 2;
+    my $fields = [];
+    for ( my $i = 0 ; $i < $bars ; $i++ ) {
+        push(
+            @{$fields},
+            $window->add(
+                "label$i", 'Label',
+                -width         => $wchar / 2,
+                -border        => 0,
+                -padtop        => $i + 1,
+                -padleft       => 0,
+                -textalignment => 'right',
+                -text          => '',
+            )
+        );
+    }
+    my $ping = 0;
+
+    sub displayTime {
+        my $i = 0;
+        my $metric;
+        foreach ( @{ $obj->{checks} } ) {
             my $currentCheck = $config->{checks}->{$_};
 
             $currentCheck->execute();
-            my $tup    = $currentCheck->{returnVal};
+            my $tup = $currentCheck->{returnVal};
             $metric = $tup->[0][0][0];
-            my $unit   = $currentCheck->{units}[0] or "";
-            my $status = $tup->[0][0][1];
-            my $clr    = "White";
+            my $unit    = $currentCheck->{units}[0] or "";
+            my $status  = $tup->[0][0][1];
+            my $clr     = "White";
+            my $scaling = ( $fields->[$i]->{'-width'} - 5 ) / $tup->[0][2][0];
+            my $freebackends = ( $tup->[0][0][0] - $tup->[0][1][0] ) * $scaling;
+            my $waitingbackends = $tup->[0][1][0] * $scaling;
 
-my $scaling = ($lab1->{'-width'}-5) /  $tup->[0][2][0];
-my $freebackends = ($tup->[0][0][0] - $tup->[0][1][0])* $scaling;
-my $waitingbackends = $tup->[0][1][0]* $scaling;
-    $lab1->text(  
-utils::fillwith
-( ".", $freebackends )
-. utils::fillwith
-(":",$waitingbackends)."".$tup->[0][0][0]."/".$tup->[0][1][0] );
-
+            if ( $tup->[0][0][0] > 1000 ) {
+                $tup->[0][0][0] = '' . int( $tup->[0][0][0] / 1000 ) . 'k';
+            }
+            if ( $tup->[0][1][0] > 1000 ) {
+                $tup->[0][1][0] = '' . int( $tup->[0][1][0] / 1000 ) . 'k';
+            }
+            my $title = $tup->[0][0][0] . "/" . $tup->[0][1][0];
+            $title =
+              utils::fillwith( " ",
+                8 - length( $tup->[0][0][0] . "/" . $tup->[0][1][0] ) )
+              . $title;
+            $fields->[ $i++ ]->text( utils::fillwith( "▭", $freebackends )
+                  . utils::fillwith( "▬", $waitingbackends ) . ""
+                  . $title );
 
         }
-if($ping){$ping =0}
-    else{$ping=1}
-
-my $symbol = '↓';
-if ($ping){$symbol='↡';}
-$stat->text( $symbol.localtime."Still in Development!" );
-    $utils::config->{DB}->commit;
+        my $symbol = '⛃';
+        if ( $ping++ % 2 ) { $symbol = '⛂'; }
+        $pinglab->text( "[" . $symbol . "]" );
+        $stat->text( localtime . " [Still in Development]" );
+        $utils::config->{DB}->commit;
     }
 
     $cui->set_binding( sub { exit; }, "\cQ" );
     $cui->set_binding( sub { exit; }, "\cC" );
-    $cui->set_timer( 'update_time', \&displayTime ,1);
+    $cui->set_timer( 'update_time', \&displayTime, 1 );
 
-   $cui->mainloop();
+    $cui->mainloop();
 
 }
-
 1;

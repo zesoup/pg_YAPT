@@ -42,14 +42,16 @@ sub loop {
 
         my $firstcheck = 0;
         foreach ( @{ $obj->{checks} } ) {
-            my $currentCheck = $config->{checks}->{$_};
+            my $currentCheck = $config->{checks}->{ $_->{check} };
+            my $checkname = ($_->{label}  or $_->{check} );
+
             if (    ( $currentCheck->{isDelta} )
-                and ( not exists $currentCheck->{oldmetric} ) )
+                and ( not exists $currentCheck->{$checkname}->{oldmetric} ) )
             {
                 $loopagain = 1;
             }
-            $currentCheck->execute();
-            my $tup = $currentCheck->{returnVal};
+            $currentCheck->execute( $_ );
+            my $tup = $currentCheck->{$checkname}->{returnVal};
             if ( $firstcheck++ ) { $output .= $separator; }
             $output .= $tup->[0][0][0] . $currentCheck->{units}[0];
         }

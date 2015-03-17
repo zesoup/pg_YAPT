@@ -28,15 +28,18 @@ sub loop {
             usleep $obj->{updatetime};
         }
         foreach ( @{ $obj->{checks} } ) {
-            my $currentCheck = $config->{checks}->{$_};
+            my $currentCheck = $config->{checks}->{ $_->{check} };
+            my $checkname = ($_->{label}  or $_->{check} );
+
+
             if (    ( $currentCheck->{isDelta} )
-                and ( not exists $currentCheck->{oldmetric} ) )
+                and ( not exists $currentCheck->{$checkname}->{oldmetric} ) )
             {
                 $minRuns = 2;
             }
-            $currentCheck->execute();
-            my $tup = $currentCheck->{returnVal};
-            $output->{$_} = $tup->[0][0];
+            $currentCheck->execute( $_ );
+            my $tup = $currentCheck->{$checkname}->{returnVal};
+            $output->{ $checkname } = $tup->[0][0];
         }
     }
     my $json_text = encode_json $output;

@@ -4,7 +4,7 @@ $config = {
     version  => "2.0",
     tests    => 0,
     #delimiter=> " ",
-    loglevel=> "INFO",
+    loglevel=> "WARN",
     database => {
         maxAttempts    => 3,
         reconnectdelay => 0.5,
@@ -20,72 +20,42 @@ $config = {
             template   => "wall",
             updatetime => 1000000,    #ns
             checks     => [
-                "Time","WAL", "SIZE", "UpTime",
-                "TotRows", "S/I", "I/U/D","User", "txID"
+                {check=>"Time",label=>"T"},
+                {check=>"WAL", label=>"W1"},
+                {check=>"WAL", label=>"W2"}, 
+                {check=>"ReturnN",label=>"N", param=>[2]}, 
+                {check=>"UpTime",label=>"UP"}
             ]
         },
         curses =>{
             template=> "curses",
-            checks =>["User"]
+            checks =>[{check=>"User"},{check=>"blkhitread"}]
            },
         list =>{
             template => "list",
-            checks => [ "Act" ]
+            checks => [{check=>"Act"} ]
          },
-        wlwork => {
-            template   => "wall",
-            updatetime => 1000000,
-            checks     => [
-                "WAL",  "txID",  "SysBlk", "BlkAcc",  "Locks",
-                "RTupT", "RTupI", "S/I",    "I/U/D"
-            ]
-        },
-        wlusers => {
-            template   => "wall",
-            updatetime => 1000000,                      #ns
-            checks     => [ "User", "Locks" ]
-        },
-        wlDML => {
-            template   => "wall",
-            updatetime => 1000000,                      #ns
-            checks     => [ "S/I", "I/U/D" ]
-        },
 
         json => {
             template   => "json",
             updatetime => 1000000,
             checks     => [
-                "Random", "WAL",    "User",    "UpTime",
-                "MaxBlt", "BlkAcc", "TotRows", "Locks",
-                "txID"
+                {check=>"Random"},{check=>"WAL"}, {check=>"User"},
+                {check=>"UpTime"},{check=>"MaxBlt"},{check=>"BlkAcc"}, 
+                {check=>"TotRows"},{check=>"Locks"},{check=> "txID"}
             ]
         },
         csv => {
             template   => "csv",
             updatetime => 1000000,
             checks     => [
-                "TotRows", "WAL",    "User",    "UpTime",
-                "MaxBlt",  "BlkAcc", "TotRows", "Locks",
-                "txID"
+                {check=>"TotRows"},  {check=>"WAL"},
+                {check=>    "User"},  {check=>   "UpTime"},
+                {check=>"MaxBlt"},   {check=>"BlkAcc"},
+                {check=> "TotRows"}, {check=> "Locks"},
+                {check=>"txID"}
             ]
-        },
-        test => {
-            template   => "wall",
-            updatetime => 100000,
-            checks     => [
-                "AnlzAge", "BlkAcc",  "I/U/D",   "Locks",
-                "MaxBlt",  "PID",     "QTime",   "RTupI",
-                "RTupT",   "Random",  "S/I",     "SIZE",
-                "SysBlk",  "UpTime", "TotRows", "User",
-                "WAL",     "txID"
-              ]
-
-          }
-
-          #curses => {
-          #    template => "curses",
-          #    checks   => [ "UpTime", "User", "MaxBlt" ]
-          #  }
+        }
 
     }
 };

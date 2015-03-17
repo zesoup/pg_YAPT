@@ -154,14 +154,14 @@ sub reloadConf {
         my $checks;
         if ( $f =~ /^\.+/ ) { next; }
         $checks = Config::IniFiles->new( -file => "$checkDirectory/$f" )
-          or die "cantLoad";
+          or (ErrLog ("cantLoad $f","UTILS", "WARN")and next);
         foreach my $chk ( $checks->Sections() ) {
             $config->{checks}->{$chk} = {};
             foreach my $param ( $checks->Parameters($chk) ) {
                 $config->{checks}->{$chk}->{$param} =
                   eval( $checks->val( $chk, $param ) )
-                  or ( say "parsing $param for $chk failed" and next );
-            }
+                  or ( ErrLog( "parsing $param for $chk failed: $@ ","UTILS", "WARN") and next );
+    }
         }
     }
     closedir $checkdir;
@@ -171,7 +171,7 @@ sub reloadConf {
    # abit messy but require shouldnt reload multiple times - we're fine for now.
     foreach my $key ( keys %{ $config->{checks} } ) {
         require "plugins/" . $config->{checks}->{$key}->{plugin} . ".pm"
-          or print "could not load $key";
+          or ErrLog ( "could not load $key", "UTILS", "WARN");
 
         bless( $config->{checks}->{$key}, $config->{checks}->{$key}->{plugin} );
         $config->{checks}->{$key}->{name}   = $key;

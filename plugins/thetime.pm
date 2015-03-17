@@ -16,19 +16,19 @@ sub new {
 }
 
 sub execute {
-    my ($obj)  = @_;
+    my ($obj, $params )  = @_;
     my $packname = __PACKAGE__;
+    my $identifier =  ( $params->{label} || $params->{check} );
 
-
-    $obj->{metric} =
+    $obj->{$identifier}->{metric} =
       strftime "%H:%M:%S", localtime;
-    unless ( exists $obj->{oldmetric} ) {
-        $obj->{oldmetric} = $obj->{metric};
+    unless ( exists $obj->{$identifier}->{oldmetric} ) {
+        $obj->{$identifier}->{oldmetric} = $obj->{$identifier}->{metric};
     }
-    if   ( exists $obj->{action} ) { $obj->{returnVal} = $obj->{action}($obj); }
+    if   ( exists $obj->{action} ) { $obj->{$identifier}->{returnVal} = $obj->{action}($obj); }
     else                              
-    { $obj->{returnVal} = [[[$obj->{metric},0]]]; }
-    $obj->{oldmetric} = $obj->{metric};
+    { $obj->{$identifier}->{returnVal} = [[[$obj->{$identifier}->{metric},0]]]; }
+    $obj->{$identifier}->{oldmetric} = $obj->{$identifier}->{metric};
     return 0;
 }
 

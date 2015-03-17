@@ -6,7 +6,7 @@ $config = {
         default => {
             template   => "wall",
             updatetime => 10000,    #ns
-            checks => [ "WAL", "SIZE", "UpTime", "TotRows", "S/I", "I/U/D" ]
+            checks => [ {check=>"WAL"},{check=> "SIZE"},{check=> "UpTime"}, {check=>"TotRows"}, {check=>"S/I"}, {check=>"I/U/D"} ]
           }
 
     }
