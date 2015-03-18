@@ -5,6 +5,10 @@ use 5.20.1;
 package pg_dbi;
 use Time::HiRes qw (gettimeofday usleep);
 use DBI;
+
+use DBI qw(:sql_types);
+use DBD::Pg qw(:pg_types);
+
 use utils;
 
 sub new {
@@ -23,8 +27,17 @@ sub new {
 sub init {
     if ( $_[0]->{tests} ) { return undef; }
     $_[0]->{DB}->{connected} = 1;
-    my $dbh = DBI->connect( 'DBI:Pg:' . $_[0]->{database}->{connection}."; application_name=pg_YAPT",
-        "", "", { PrintError => 0, } )
+    my $dbh = DBI->connect(
+        'DBI:Pg:'
+          . $_[0]->{database}->{connection}
+          . "; application_name=pg_YAPT",
+        "", "",
+        {
+            PrintError        => 1,
+            AutoCommit        => 0,
+            pg_server_prepare => 1
+        }
+      )
       or
       utils::ErrLog( "Couldnt connect to DB!\n" . $DBI::errstr, "DB", "FATAL" );
     $dbh->{AutoCommit}  = 0;
@@ -44,7 +57,7 @@ sub commit {
 }
 
 sub returnAndStore {
-    my ( $config, $query, $cachename ) = @_;
+    my ( $config, $query, $cachename, $qparams ) = @_;
     my ( $starts, $startms ) = gettimeofday;
     if ( $config->{config}->{tests} ) {
         my $output = [ [0] ];
@@ -67,12 +80,21 @@ sub returnAndStore {
 
     $attempts++;
     goto RETRY unless ( UNIVERSAL::isa( $config->{dbh}, "DBI::db" ) );
-    utils::ErrLog( "$query" , "$cachename via DB", "debug");
+    utils::ErrLog( "$query", "$cachename via DB", "debug" );
     my $stm = $config->{dbh}->prepare($query) or goto RETRY;
-    $stm->execute() or goto RETRY;
-
+    if ( exists $qparams->[0] ) {
+        $stm->bind_param( 1, undef, SQL_VARCHAR );
+        say STDERR "meeeeeh";
+        $stm->execute(4);
+        say STDERR "..";
+    }
+    else {
+        $stm->execute()
+          or ( utils::ErrLog( "$_", "DB", "WARN" ) and goto RETRY );
+    }
     my $out = $stm->fetchall_arrayref() or goto RETRY;
-  my ( $ends, $endms ) = gettimeofday;
+
+    my ( $ends, $endms ) = gettimeofday;
     unless ( exists $config->{config}->{DB}->{worsed} ) {
         $config->{config}->{DB}->{worsed} = 0;
     }

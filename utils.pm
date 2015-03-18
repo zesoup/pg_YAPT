@@ -20,22 +20,26 @@ our $checkDirectory;
 
 our $cacheFile;
 
-
-
 our $testmode;
 our $widenoverflow;
-
 
 sub cacheChecks {
     open my $FH, ">", $cacheFile;
     use Data::Dumper;
+
+    #say STDERR Dumper($config->{checks});
     $Data::Dumper::Deepcopy = 1;
     my $cache = {};
     foreach my $check ( keys %{ $config->{checks} } ) {
         $cache->{$check} = {};
-        $cache->{$check}->{metric} = $config->{checks}->{$check}->{metric};
-        $cache->{$check}->{oldmetric} =
-          $config->{checks}->{$check}->{oldmetric};
+        foreach my $param ( keys %{ $config->{checks}->{$check} } ) {
+            if ( $param eq "config" ) { next; }
+            if ( $param eq "action" ) { next; }
+
+            $cache->{$check}->{$param} = $config->{checks}->{$check}->{$param};
+
+        }
+
     }
 
     say $FH Dumper($cache);
@@ -51,8 +55,9 @@ sub loadCache {
       || ( ErrLog( "could not parse cache", "UTILS", "WARN" ) and return );
     close $FH;
     foreach my $check ( keys %{$VAR1} ) {
-        $config->{checks}->{$check}->{metric}    = $VAR1->{$check}->{metric};
-        $config->{checks}->{$check}->{oldmetric} = $VAR1->{$check}->{oldmetric};
+        foreach my $param ( keys %{ $VAR1->{$check} } ) {
+            $config->{checks}->{$check}->{$param} = $VAR1->{$check}->{$param};
+        }
     }
 }
 
@@ -141,7 +146,8 @@ sub reloadConf {
     open( my $FH, "<", $configFile )
       || ( ErrLog( "could not read config", "UTILS", "FATAL" ) and exit 1 );
 
-    eval( join( '', <$FH> ) ) || ( ErrLog( "could not parse config", "UTILS", "FATAL") and exit 1);
+    eval( join( '', <$FH> ) )
+      || ( ErrLog( "could not parse config", "UTILS", "FATAL" ) and exit 1 );
     close $FH;
 
     # did we just load a config or a cachefile?
@@ -149,19 +155,26 @@ sub reloadConf {
     # If it's not a cachefile, check-configurations need to be provided.
     # They reside within configs in the checks/ folder.
     # Load all of 'em.
-    opendir my $checkdir, $checkDirectory || die "Can't open check-directory: $!\n";
+    opendir my $checkdir,
+      $checkDirectory || die "Can't open check-directory: $!\n";
     while ( my $f = readdir $checkdir ) {
         my $checks;
         if ( $f =~ /^\.+/ ) { next; }
         $checks = Config::IniFiles->new( -file => "$checkDirectory/$f" )
-          or (ErrLog ("cantLoad $f","UTILS", "WARN")and next);
+          or ( ErrLog( "cantLoad $f", "UTILS", "WARN" ) and next );
         foreach my $chk ( $checks->Sections() ) {
             $config->{checks}->{$chk} = {};
             foreach my $param ( $checks->Parameters($chk) ) {
                 $config->{checks}->{$chk}->{$param} =
                   eval( $checks->val( $chk, $param ) )
-                  or ( ErrLog( "parsing $param for $chk failed: $@ ","UTILS", "WARN") and next );
-    }
+                  or (
+                    ErrLog(
+                        "parsing $param for $chk failed: $@ ", "UTILS",
+                        "WARN"
+                    )
+                    and next
+                  );
+            }
         }
     }
     closedir $checkdir;
@@ -171,7 +184,7 @@ sub reloadConf {
    # abit messy but require shouldnt reload multiple times - we're fine for now.
     foreach my $key ( keys %{ $config->{checks} } ) {
         require "plugins/" . $config->{checks}->{$key}->{plugin} . ".pm"
-          or ErrLog ( "could not load $key", "UTILS", "WARN");
+          or ErrLog( "could not load $key", "UTILS", "WARN" );
 
         bless( $config->{checks}->{$key}, $config->{checks}->{$key}->{plugin} );
         $config->{checks}->{$key}->{name}   = $key;
@@ -218,11 +231,14 @@ sub stampend {
 
 sub ErrLog {
     my ( $msg, $sender, $type ) = @_;
-    my $logtypes = ["FATAL","WARN","INFO","debug"];
-    foreach ( @{$logtypes} ){
-    if ($type eq $_){last;}
-    if ((exists$config->{loglevel})and($config->{loglevel} eq $_)){return}
-    };
+    my $logtypes = [ "FATAL", "WARN", "INFO", "debug" ];
+    foreach ( @{$logtypes} ) {
+        if ( $type eq $_ ) { last; }
+        if ( ( exists $config->{loglevel} ) and ( $config->{loglevel} eq $_ ) )
+        {
+            return;
+        }
+    }
     say STDERR "[" . localtime . "] " . $type . " " . $sender . ":" . $msg;
 }
 

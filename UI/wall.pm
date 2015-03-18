@@ -39,9 +39,6 @@ sub loop {
         $utils::widenoverflow = 0;
         $utils::config->{DB}->commit;
 
-        if ( $configAge ne $utils::configAge ) {
-            return "continue";
-        }
         my $linestart = gettimeofday;
         my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
 
@@ -50,6 +47,8 @@ sub loop {
         my $config = $utils::config;
         $config->{dbh}->{worsttime} = 0;
         unless ( exists $config->{main}->{i} ) { $config->{main}->{i} = 0; }
+
+        # Repeatable Header
         unless ( $config->{main}->{i}++ % ( $hchar - 1 ) ) {
             my $first = 0;
             foreach ( @{ $obj->{checks} } ) {
@@ -64,6 +63,8 @@ sub loop {
             print $line;
             $line = "";
         }
+
+        # Actual Check
         my $i = 0;
         foreach ( @{ $obj->{checks} } ) {
             my $currentCheck = $config->{checks}->{ $_->{check} };
@@ -99,9 +100,10 @@ sub loop {
         my $now = gettimeofday;
         my $timetosleep =
           ( $obj->{updatetime} - ( $now - $linestart ) * 1000000 );
+ 
         if ( $utils::config->{sync} ) {
             my $sleepfix = ( $now * 1000 ) % ( $obj->{updatetime} / 1000 );
-            if ( $sleepfix > $obj->{updatetime} / 2.0 ) {
+            if ( $sleepfix *1000 > $obj->{updatetime} / 2.0 ) {
                 $sleepfix = -( $obj->{updatetime} / 1000 - $sleepfix );
             }
             $timetosleep = $timetosleep - 300 * $sleepfix;

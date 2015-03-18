@@ -22,7 +22,7 @@ $config = {
 
     
     database => {
-        maxAttempts    => 3,
+        maxAttempts    => 6,
         reconnectdelay => 0.5,
         connection     => "port=5432;host=localhost;dbname=postgres;",
     },

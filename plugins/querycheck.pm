@@ -20,10 +20,11 @@ sub execute {
     my $packname = __PACKAGE__;
     my $identifier = ( $params->{label} || $params->{check} );
     utils::stampbegin($obj->{ $identifier });
-
+    my $queryparams = $params->{"param"};
+my $test = 6;
     # Call the Query and fetch the result.
     $obj->{$identifier}->{metric} =
-      $obj->{config}->{DB}->returnAndStore( $obj->{query}, $identifier );
+      $obj->{config}->{DB}->returnAndStore( $obj->{query}, $identifier , $queryparams);
 
     # Make sure all values exist
     unless ( defined $obj->{$identifier}->{metric} ) {

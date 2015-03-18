@@ -34,7 +34,8 @@ sub loop {
 
             if (    ( $currentCheck->{isDelta} )
                 and ( not exists $currentCheck->{$checkname}->{oldmetric} ) )
-            {
+            {say STDERR $checkname;
+#use Data::Dumper; $Data::Dumper::Maxdepth=2; say STDERR Dumper($currentCheck);
                 $minRuns = 2;
             }
             $currentCheck->execute( $_ );

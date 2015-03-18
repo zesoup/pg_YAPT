@@ -6,8 +6,6 @@ use 5.20.1;
 
 # Set includepath to the local position. This Program will rely heavily on
 # local files.
-#use FindBin;
-#use lib $FindBin::Bin;
 use File::Basename;
 # Utils provide basic tools and utils. e.G Config-Handle.
 use lib ( dirname $0); #wherever pg_YAPT is, thats where the includes are!
@@ -20,14 +18,9 @@ use Getopt::Long;
 use Getopt::Long::Descriptive;
 
 # On Sighub, reload config and continue with thatever you did.
-$SIG{HUP} = sub {
-    utils::ErrLog( "Got SIGHUP", "main", "INFO" );
-    utils::checkAndReloadConfig();
-    return;
-};
 
-#say $ENV{PWD};
-#say dirname $0;
+
+
 sub main {
     my $version = "0.0.4";
 
