@@ -29,10 +29,13 @@ sub loop {
         $output = '';
         if ( ( $loopagain == -1 ) and ( $UIopts =~ "header" ) ) {
             foreach ( @{ $obj->{checks} } ) {
+ if ( ref $_ eq "HASH" )
+{ $_ = utils::checkfactory($_) }
+
                 unless ( $output eq "" ) {
                     $output .= $separator;
                 }
-                $output .= $_;
+                $output .= $_->{identifier};
             }
             $output .= "\n";
             print $output;
@@ -41,19 +44,18 @@ sub loop {
         $loopagain = 0;
 
         my $firstcheck = 0;
-        foreach ( @{ $obj->{checks} } ) {
-            my $currentCheck = $config->{checks}->{ $_->{check} };
-            my $checkname = ($_->{label}  or $_->{check} );
-
+        foreach my $currentCheck ( @{ $obj->{checks} } ) {
             if (    ( $currentCheck->{isDelta} )
-                and ( not exists $currentCheck->{$checkname}->{oldmetric} ) )
+                and ( not exists $currentCheck->{oldmetric} ) )
             {
                 $loopagain = 1;
             }
-            $currentCheck->execute( $_ );
-            my $tup = $currentCheck->{$checkname}->{returnVal};
+ if ( ref $currentCheck eq "HASH" )
+{ $currentCheck = utils::checkfactory($currentCheck) }
+            $currentCheck->execute( );
+            my $tup = $currentCheck->{returnVal};
             if ( $firstcheck++ ) { $output .= $separator; }
-            $output .= $tup->[0][0][0] . $currentCheck->{units}[0];
+            $output .= $tup->[0][0][0] . $currentCheck->{base}->{units}[0];
         }
 
         unless ($loopagain) { say $output; }

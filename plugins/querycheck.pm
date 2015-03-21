@@ -14,7 +14,6 @@ sub new {
     $params->{base} =
       $utils::config->{checks}->{ $params->{check} };
     $params->{identifier} = ( $params->{label} || $params->{check} );
-
     bless( $params, __PACKAGE__ );
     return $params;
 
@@ -37,8 +36,8 @@ sub execute {
     unless ( exists $obj->{oldmetric} ) {
         $obj->{oldmetric} = $obj->{metric};
     }
-
     # Start processing.
+
     if ( exists $obj->{base}->{action} ) {
         $obj->{returnVal} = $obj->{base}->{action}($obj);
     }

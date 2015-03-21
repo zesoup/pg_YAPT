@@ -63,7 +63,7 @@ sub loop {
         # Actual Check
         my $i           = 0;
         foreach my $currentCheck ( @{ $obj->{checks} } ) {
-     if ( ref $currentCheck eq "HASH" )
+ if ( ref $currentCheck eq "HASH" )
 { $currentCheck = utils::checkfactory($currentCheck) }
 
 $currentCheck->execute();

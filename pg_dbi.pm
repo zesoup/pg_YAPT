@@ -62,7 +62,9 @@ sub ask {
     my ( $config, $query, $qparams, $check) = @_;
     if ( $config->{config}->{tests} ) {
         my $output = [ [0] ];
-        $output = $config->{config}->{checks}->{ $check->{identifier} }->{querytest};
+        unless (exists $check->{base}->{querytest}){
+utils::ErrLog($check->{identifier}." lacks Querytest!", "DBI", "FATAL")}
+        $output = $check->{base}->{querytest};
         return $output;
     }
     my $attempts = 0;

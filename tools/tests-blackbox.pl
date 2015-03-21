@@ -8,7 +8,7 @@ my $result  = "RESULT";
 my $expect  = "EXPECTED";
 my $yapt = "perl ../pg_YAPT.pl";
 
-#$result = $expect;
+$result = $expect;
 
 
 my $passed = 0;
@@ -32,7 +32,7 @@ closedir $dh;
 say "Testing all Checks:";
 
 my @allChecks =
-  split( "\n", `$yapt --config=$testdir/empty -l 2>>/dev/null` );
+  split( "\n", `$yapt --config=$testdir/config.pm -l 2>>/dev/null` );
 my $skipline = 1;
 my $type     = "CHECK";
 
@@ -51,12 +51,12 @@ foreach (@allChecks) {
     $_ =~ tr/"\///d;
      
     if ( $type eq "CHECK" ) {
-`$yapt -o "loops=3 width=50" -a "{check=>'$raw'}" --config=$testdir/empty 2>&1 > $testdir/$type.$_.$result`;
+`$yapt -o "loops=3 width=50" -a "{check=>'$raw'}" --config=$testdir/config.pm 2>&1 > $testdir/$type.$_.$result`;
 #if ($?) { die "error $raw"; }
    }
 
     if ( $type eq "UI" ) {
-`$yapt -o "loops=3 width=50" -u "$raw"  --config=$testdir/empty 2>&1 > $testdir/$type.$_.$result`;
+`$yapt -o "loops=3 width=50" -u "$raw"  --config=$testdir/config.pm 2>&1 > $testdir/$type.$_.$result`;
 #if ($?) { die "error $raw"; }
     }
 
