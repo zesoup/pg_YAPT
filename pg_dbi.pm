@@ -33,13 +33,15 @@ sub init {
           . "; application_name=pg_YAPT",
         "", "",
         {
-            PrintError        => 1,
+            PrintError        => 0,
             AutoCommit        => 0,
-            pg_server_prepare => 1
+            pg_server_prepare => 0
         }
       )
       or
-      utils::ErrLog( "Couldnt connect to DB!\n" . $DBI::errstr, "DB", "FATAL" );
+      (utils::ErrLog( "Couldnt connect to DB!", "DB", "FATAL" )
+      and 
+      utils::ErrLog( "\n".$DBI::errstr, "DB", "INFO" ) ) ;
     $dbh->{AutoCommit}  = 0;
     $dbh->{ReadOnly}    = 1;
     $dbh->{destination} = $_[0]->{database}->{connection};
@@ -56,37 +58,34 @@ sub commit {
     return;
 }
 
-sub returnAndStore {
-    my ( $config, $query, $cachename, $qparams ) = @_;
-    my ( $starts, $startms ) = gettimeofday;
+sub ask {
+    my ( $config, $query, $qparams, $check) = @_;
     if ( $config->{config}->{tests} ) {
         my $output = [ [0] ];
-        $output = $config->{config}->{checks}->{$cachename}->{querytest};
+        $output = $config->{config}->{checks}->{ $check->{identifier} }->{querytest};
         return $output;
     }
     my $attempts = 0;
   RETRY:
-    if ( $attempts >= $config->{config}->{database}->{maxAttempts} ) {
+    if ( $attempts > $config->{config}->{database}->{maxAttempts} ) {
         die "could not reestablish connection";
     }
     if ($attempts) {
         if ( $config->{connected} ) {
-            utils::ErrLog( "Not Connected to DB!", "DB", "WARN" );
+            utils::ErrLog( "DB Error!", "DB", "WARN" );
+            utils::ErrLog( "\n".$DBI::errstr, "DB", "INFO" );
             usleep( $config->{config}->{database}->{reconnectdelay} * 1000000 );
-            utils::ErrLog( "Trying to reconnect", "DB", "INFO" );
+            utils::ErrLog( "Trying to reconnect($attempts/".$config->{config}->{database}->{maxAttempts} .")", "DB", "WARN" );
         }
         $config->{dbh} = init( $config->{config} );
     }
 
     $attempts++;
     goto RETRY unless ( UNIVERSAL::isa( $config->{dbh}, "DBI::db" ) );
-    utils::ErrLog( "$query", "$cachename via DB", "debug" );
+    utils::ErrLog( "$query", $check->{identifier}." via DB", "debug" );
     my $stm = $config->{dbh}->prepare($query) or goto RETRY;
     if ( exists $qparams->[0] ) {
-        $stm->bind_param( 1, undef, SQL_VARCHAR );
-        say STDERR "meeeeeh";
-        $stm->execute(4);
-        say STDERR "..";
+        $stm->execute( @{$qparams} );
     }
     else {
         $stm->execute()
@@ -94,15 +93,6 @@ sub returnAndStore {
     }
     my $out = $stm->fetchall_arrayref() or goto RETRY;
 
-    my ( $ends, $endms ) = gettimeofday;
-    unless ( exists $config->{config}->{DB}->{worsed} ) {
-        $config->{config}->{DB}->{worsed} = 0;
-    }
-    if ( $config->{config}->{DB}->{worsed} < $endms - $startms ) {    # SECONDS!
-        $config->{config}->{DB}->{worsed} = $endms - $startms;
-    }
-
-    $config->{config}->{cache}->{$cachename} = $out;
     return $out;
 }
 

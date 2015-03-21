@@ -8,6 +8,7 @@ use POSIX;
 
 use Config::IniFiles;
 use Digest::MD5 qw(md5_hex);
+use Scalar::Util qw(looks_like_number);
 
 use pg_dbi;
 use Time::HiRes qw(usleep gettimeofday);
@@ -185,10 +186,6 @@ sub reloadConf {
     foreach my $key ( keys %{ $config->{checks} } ) {
         require "plugins/" . $config->{checks}->{$key}->{plugin} . ".pm"
           or ErrLog( "could not load $key", "UTILS", "WARN" );
-
-        bless( $config->{checks}->{$key}, $config->{checks}->{$key}->{plugin} );
-        $config->{checks}->{$key}->{name}   = $key;
-        $config->{checks}->{$key}->{config} = $config;
     }
 
     # same for UIs.
@@ -199,6 +196,15 @@ sub reloadConf {
     }
 
     return $config;
+}
+
+sub checkfactory {
+    my ($target)    = @_;
+    my $targetcheck = $target->{check};
+    my $targetclass = $config->{checks}->{$targetcheck}->{plugin};
+
+    my $output = $targetclass->new($target);
+    return $output;
 }
 
 sub checkAndReloadConfig {
@@ -227,6 +233,46 @@ sub stampbegin {
 sub stampend {
     my ($obj) = @_;
     $obj->{endstamp} = gettimeofday();
+}
+
+sub formatter {
+    my ( $val, $unit, $obj ) = @_;
+    if ( $obj->{isHumanreadable} ){return $val};
+    unless (defined $unit){$unit = ""};
+    if ( $unit eq "N" ) {
+        return $val;
+    }
+    if ( $unit eq "B" ) {
+        if ( abs($val) >= 99 ) {
+            $val /= 1024;
+            $unit = "KB";
+        }
+    }
+    if ( $unit eq "KB" ) {
+        if ( abs($val) >= 99 ) {
+            $val /= 1024;
+            $unit = "MB";
+        }
+    }
+
+    return sprintf( "%.1f", $val ) . $unit;
+}
+
+sub checkTiming {
+    my ($check) = @_;
+
+    if (
+        ( exists $config->{timing} )
+        and ( ( $check->{endstamp} - $check->{initstamp} ) * 1000 >=
+            $config->{timing} )
+      )
+    {
+        utils::ErrLog(
+            ceil( 1000 * ( $check->{endstamp} - $check->{initstamp} ) ) . "ms",
+            $check->{identifier} . ' via UTILS',
+            "INFO"
+        );
+    }
 }
 
 sub ErrLog {

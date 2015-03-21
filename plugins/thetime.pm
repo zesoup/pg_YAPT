@@ -7,11 +7,12 @@ use 5.20.1;
 use POSIX;
 
 sub new {
-    my ( $name, %params ) = @_;
-    my $self = { config => $params{config} };
+    shift;
+    my ( $params  ) = @_;
 
-    bless( $self, __PACKAGE__ );
-    return $self;
+    #my $params = {  };
+    bless( $params, __PACKAGE__ );
+    return $params;
 
 }
 

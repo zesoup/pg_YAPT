@@ -8,8 +8,6 @@ use POSIX;
 use Term::ANSIColor;
 use utils;
 
-$SIG{INT} = sub { utils::removePID(); exit "sigint"; };
-
 sub new {
     my (%params) = @_;
     my $self = { config => $params{config} };
@@ -19,8 +17,6 @@ sub new {
 }
 
 sub loop {
-    utils::storePID();
-
     my ( $obj, $config, $name, $opts ) = @_;
     my $configAge = $utils::configAge;
     my $loopcount = utils::getValueOfOptOrDefault( $opts, "loops=", -1 );
@@ -65,30 +61,30 @@ sub loop {
         }
 
         # Actual Check
-        my $i = 0;
-        foreach ( @{ $obj->{checks} } ) {
-            my $currentCheck = $config->{checks}->{ $_->{check} };
-            my $checkname = ( $_->{label} or $_->{check} );
+        my $i           = 0;
+        foreach my $currentCheck ( @{ $obj->{checks} } ) {
+     if ( ref $currentCheck eq "HASH" )
+{ $currentCheck = utils::checkfactory($currentCheck) }
 
-            $currentCheck->execute($_);
+$currentCheck->execute();
+            my $tup    = $currentCheck->{returnVal};
+            my $maxlen = scalar @{ $tup->[0] };
+            my $valuestring = "";
+            for ( my $i = 0 ; $i < $maxlen ; $i++ ) {
+                my $metric = $tup->[0][$i][0];
+                my $unit   = $currentCheck->{base}->{units}[$i];
+                my $status = $tup->[0][$i][1];
 
-            my $tup    = $currentCheck->{$checkname}->{returnVal};
-            my $metric = $tup->[0][0][0];
-            my $unit   = $currentCheck->{units}[0] or "";
-            my $status = $tup->[0][0][1];
-
-            my $clr = "White";
-            if ( int($status) >= 1 ) { $clr = "Bright_Yellow"; }
-            if ( int($status) >= 2 ) { $clr = "Bright_Red"; }
-            if ( ( ++$i != 1 ) and ( $i - 1 != $obj->{hashsize} ) ) {
+                if ($i){
+                $valuestring .="/"}
+                    $valuestring .= utils::formatter($metric, $unit, $currentCheck );
+            }
+            if ( ( $i++ != 0 ) and ( $i != $obj->{hashsize}+1 ) ) {
                 $line .= $separator;
             }
 
             $line .=
-              color($clr)
-              . utils::widen( $wchar, $metric . $unit, $obj->{hashsize}, 1,
-                " " )
-              . color("reset");
+               utils::widen( $wchar, $valuestring, $obj->{hashsize}, 1, " " );
             print $line;
             $line = "";
         }
@@ -100,10 +96,10 @@ sub loop {
         my $now = gettimeofday;
         my $timetosleep =
           ( $obj->{updatetime} - ( $now - $linestart ) * 1000000 );
- 
+
         if ( $utils::config->{sync} ) {
             my $sleepfix = ( $now * 1000 ) % ( $obj->{updatetime} / 1000 );
-            if ( $sleepfix *1000 > $obj->{updatetime} / 2.0 ) {
+            if ( $sleepfix * 1000 > $obj->{updatetime} / 2.0 ) {
                 $sleepfix = -( $obj->{updatetime} / 1000 - $sleepfix );
             }
             $timetosleep = $timetosleep - 300 * $sleepfix;

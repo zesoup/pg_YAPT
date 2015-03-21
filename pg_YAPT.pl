@@ -51,7 +51,7 @@ sub main {
         [
             'timing|t=i',
             "print checktimes longer X to stderr",
-            { default => -1 }
+            { }
         ],
         [ 'test|T', "do not connect to the database", {} ],
         [ 'sync|S', "try to start on full seconds", {default=>0}    ],

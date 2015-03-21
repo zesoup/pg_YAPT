@@ -18,12 +18,12 @@ $config = {
 
     # Loglevel will be one of:
     # FATAL, WARN, INFO, debug
-    loglevel => "WARN",
+    loglevel => "INFO",
 
     
     database => {
         maxAttempts    => 6,
-        reconnectdelay => 0.5,
+        reconnectdelay => 0.75,
         connection     => "port=5432;host=localhost;dbname=postgres;",
     },
 
@@ -44,16 +44,18 @@ $config = {
             # checkimplementation.
             # A list is available via pg_YAPT -l
             checks     => [
-                { check => "Time",    label => "T" },
-                { check => "WAL",     label => "W1" },
-                { check => "WAL",     label => "W2" },
-                { check => "ReturnN", label => "N", param => [2] },
-                { check => "UpTime",  label => "UP" }
+              #  { check => "Time",    label => "Time" },
+                { check => "WAL",     label => "WAL" },
+                { check => "dirtyd", label=> "New Dirt" },
+		{ check => "dirty" , label=> "Total Dirt" },
+                { check => "User", label => "U" },
+                { check => "ReturnN", qParams=>["42",] },
+                { check => "UpTime",  label => "Uptime" }
             ]
         },
         curses => {
             template => "curses",
-            checks   => [ { check => "User" }, { check => "blkhitread" } ]
+            checks   => [ { check => "UserFull" }, { check => "blkhitread" } ]
         },
         list => {
             template => "list",

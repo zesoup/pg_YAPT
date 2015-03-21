@@ -70,15 +70,17 @@ sub loop {
         my $i = 0;
         my $metric;
         foreach ( @{ $obj->{checks} } ) {
-            my $currentCheck = $config->{checks}->{$_};
+            my $currentCheck = $config->{checks}->{$_->{check} };
+            my $checkname = ( $_->{label} or $_->{check} );
 
-            $currentCheck->execute();
-            my $tup = $currentCheck->{returnVal};
+            $currentCheck->execute( $_ );
+
+            my $tup = $currentCheck->{$checkname}->{returnVal};
             $metric = $tup->[0][0][0];
             my $unit    = $currentCheck->{units}[0] or "";
             my $status  = $tup->[0][0][1];
             my $clr     = "White";
-            my $scaling = ( $fields->[$i]->{'-width'} - 5 ) / $tup->[0][2][0];
+            my $scaling = ( $fields->[$i]->{'-width'} - 5 ) / ($tup->[0][2][0] or 1);
             my $freebackends = ( $tup->[0][0][0] - $tup->[0][1][0] ) * $scaling;
             my $waitingbackends = $tup->[0][1][0] * $scaling;
 
@@ -98,9 +100,9 @@ sub loop {
                   . $title );
 
         }
-        my $symbol = '⛃';
-        if ( $ping++ % 2 ) { $symbol = '⛂'; }
-        $pinglab->text( "[" . $symbol . "]" );
+        my $symbol = '⇋';
+        if ( $ping++ % 2 ) { $symbol = '⇌'; }
+        $pinglab->text( "" . $symbol . "" );
         $stat->text( localtime . " [Still in Development]" );
         $utils::config->{DB}->commit;
     }
@@ -108,7 +110,6 @@ sub loop {
     $cui->set_binding( sub { exit; }, "\cQ" );
     $cui->set_binding( sub { exit; }, "\cC" );
     $cui->set_timer( 'update_time', \&displayTime, 1 );
-
     $cui->mainloop();
 
 }

@@ -4,69 +4,63 @@ use warnings;
 use strict;
 use POSIX;
 use 5.20.1;
+use utils;
+
 
 sub new {
-    my ( $identifier, %params ) = @_;
+    shift;
+    my ($params) = @_;
 
-    my $self = { config => $params{config}, name => $params{name} };
+    $params->{base} =
+      $utils::config->{checks}->{ $params->{check} };
+    $params->{identifier} = ( $params->{label} || $params->{check} );
 
-    #    bless( $self, __PACKAGE__ );
-    return $self;
+    bless( $params, __PACKAGE__ );
+    return $params;
 
 }
 
 sub execute {
-    my ($obj,$params) = @_;
-    my $packname = __PACKAGE__;
-    my $identifier = ( $params->{label} || $params->{check} );
-    utils::stampbegin($obj->{ $identifier });
-    my $queryparams = $params->{"param"};
-my $test = 6;
+    my ($obj) = @_;
+    my $identifier = $obj->{identifier};
+    utils::stampbegin( $obj );
+    my $queryparams = undef;    #TODO
+
     # Call the Query and fetch the result.
-    $obj->{$identifier}->{metric} =
-      $obj->{config}->{DB}->returnAndStore( $obj->{query}, $identifier , $queryparams);
+    $obj->{metric} =
+      $utils::config->{DB}->ask( $obj->{base}->{query}, $obj->{qParams}, $obj );
 
     # Make sure all values exist
-    unless ( defined $obj->{$identifier}->{metric} ) {
-        $obj->{$identifier}->{metric} = $obj->{querytest} ;
+    unless ( defined $obj->{metric} ) {
+        $obj->{metric} = $obj->{querytest};
     }
-    unless ( exists $obj->{$identifier}->{oldmetric} ) {
-        $obj->{$identifier}->{oldmetric} = $obj->{$identifier}->{metric};
+    unless ( exists $obj->{oldmetric} ) {
+        $obj->{oldmetric} = $obj->{metric};
     }
-
 
     # Start processing.
-    if ( exists $obj->{action} ) { $obj->{$identifier}->{returnVal} = $obj->{action}($obj->{$identifier}); }
-    elsif ( ( exists $obj->{isDelta} ) and ( $obj->{isDelta} ) ) {
-        $obj->{$identifier}->{returnVal} =
-          [ [ [ $obj->{$identifier}->{'metric'}[0][0] - $obj->{$identifier}->{'oldmetric'}[0][0], 0 ] ] ];
+    if ( exists $obj->{base}->{action} ) {
+        $obj->{returnVal} = $obj->{base}->{action}($obj);
+    }
+    elsif ( ( exists $obj->{base}->{isDelta} ) and ( $obj->{base}->{isDelta} ) ) {
+        $obj->{returnVal} =
+          [ [ [ $obj->{'metric'}[0][0] - $obj->{'oldmetric'}[0][0], 0 ] ] ];
     }
     else {
-        $obj->{$identifier}->{returnVal} = [];
+        $obj->{returnVal} = [];
 
-        foreach my $row ( @{ $obj->{$identifier}->{metric} } ) {
+        foreach my $row ( @{ $obj->{metric} } ) {
             my $rowArr = [];
             foreach my $val ( @{$row} ) {
                 push( @{$rowArr}, [ $val, 0 ] );
             }
-            push( @{ $obj->{$identifier}->{returnVal} }, $rowArr );
+            push( @{ $obj->{returnVal} }, $rowArr );
         }
     }
-    $obj->{$identifier}->{oldmetric} = $obj->{$identifier}->{metric};
+    $obj->{oldmetric} = $obj->{metric};
 
-
-    utils::stampend($obj->{$identifier});
-    if (
-            ( exists $obj->{config}->{timing} )
-        and ( $obj->{config}->{timing} >= 0 )
-        and ( ( $obj->{$identifier}->{endstamp} - $obj->{$identifier}->{initstamp} ) * 1000 >=
-            $obj->{config}->{timing} )
-      )
-    {
-        utils::ErrLog(
-            ceil( 1000 * ( $obj->{endstamp} - $obj->{initstamp} ) ) . "ms",
-            $obj->{name}, "INFO" );
-    }
+    utils::stampend( $obj );
+    utils::checkTiming($obj);
 
     return 0;
 }
