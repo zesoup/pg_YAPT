@@ -25,9 +25,8 @@ sub loop {
       unless $utils::config->{delimiter};
     $obj->{hashsize} =
       @{ $config->{UI}->{$name}->{checks} };
-
     my $line = "\n";
-
+    $| = 1;
 # Initialize with a newline. This is will cause an unnecessary newline on startup, but will make sure
 # a sighup will work fine.
 
@@ -89,7 +88,6 @@ $currentCheck->execute();
             $line = "";
         }
         $line = "\n";
-        $|    = 1;
 
         $utils::config->{DB}
           ->commit;    # this commit will prevent idle_in_transaction marks.

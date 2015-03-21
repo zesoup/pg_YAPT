@@ -8,7 +8,7 @@ my $result  = "RESULT";
 my $expect  = "EXPECTED";
 my $yapt = "perl ../pg_YAPT.pl";
 
-$result = $expect;
+#$result = $expect;
 
 
 my $passed = 0;
@@ -36,6 +36,8 @@ my @allChecks =
 my $skipline = 1;
 my $type     = "CHECK";
 
+my $checklist = [];
+my $uilist= [];
 foreach (@allChecks) {
     if ( $skipline-- == 1 ) { next; }
     if ( $_ eq "" ) {
@@ -43,29 +45,31 @@ foreach (@allChecks) {
         $type     = "UI";
         $skipline = 1;
         next;
-    }
-
-    #   print $_.":";
-    
+    }    
     my $raw = $_;
     $_ =~ tr/"\///d;
      
     if ( $type eq "CHECK" ) {
-`$yapt -o "loops=3 width=50" -a "{check=>'$raw'}" --config=$testdir/config.pm 2>&1 > $testdir/$type.$_.$result`;
-#if ($?) { die "error $raw"; }
+push($checklist, $raw);
    }
 
     if ( $type eq "UI" ) {
-`$yapt -o "loops=3 width=50" -u "$raw"  --config=$testdir/config.pm 2>&1 > $testdir/$type.$_.$result`;
-#if ($?) { die "error $raw"; }
-    }
-
-    #if ($?) { die "error $raw"; }
-    my $diff = `diff $testdir/$type.$_.$result $testdir/$type.$_.$expect`;
-    if   ($?) { say "[ ] $raw Failed "; $failed++; }
-    else      { say "[X] $raw Passed";  $passed++; }
+push($uilist, $raw);
 }
+}
+foreach my $UI(@{$uilist}){
+foreach my $CHECK(@{$checklist}){
+#say $UI." ".$CHECK;
+my $checkstr = $CHECK;
+$checkstr =~ tr/"\///d;
+`$yapt -o "header loops=3 width=50" -u "$UI" -a "{check=>'$CHECK'}"  --config=$testdir/config.pm 2>&1 > $testdir/MIX.$UI.$checkstr.$result`;
+#if ($?) { die "error $UI.$CHECK:".$?; }
+    my $diff = `diff $testdir/MIX.$UI.$checkstr.$result $testdir/MIX.$UI.$checkstr.$expect`;
+    if   ($?) { say "[ ] $UI.$checkstr Failed "; $failed++; }
+    else      { say "[X] $UI.$checkstr Passed";  $passed++; }
 
+};
+};
 say "---------------";
 say "$failed failed";
 say "$passed passed";

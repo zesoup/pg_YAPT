@@ -47,7 +47,11 @@ $config = {
               #  { check => "Time",    label => "Time" },
                
             ]
-	}
+	},
+        csv => {
+        template=>"csv",
+        checks=>[]
+              }
 
     }
 };

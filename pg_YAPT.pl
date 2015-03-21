@@ -20,7 +20,6 @@ use Getopt::Long::Descriptive;
 # On Sighub, reload config and continue with thatever you did.
 
 
-
 sub main {
     my $version = "0.0.4";
 

@@ -123,6 +123,14 @@ sub getValueOfOptOrDefault {
     return $default;
 }
 
+sub redirectSTDERR{
+    my ($log) = @_;
+    say "Redirecting Log to $log";
+     open my $log_fh, '>>', $log;
+    *STDERR = $log_fh;
+    binmode(STDERR, ":utf8");
+}
+
 sub getMD5ofFile {
 
     # hash the content of a file.
@@ -194,15 +202,18 @@ sub reloadConf {
           or print "could not load $key";
         bless( $config->{UI}->{$key}, $config->{UI}->{$key}->{template} );
     }
+    if (exists $config->{log}){
+    redirectSTDERR($config->{log});
+    }
 
     return $config;
 }
 
-sub ensureCheck{
-my ($check) = @_;
-if ( ref $check eq "HASH" ) {
-                $check = utils::checkfactory($check);
-     }
+sub ensureCheck {
+    my ($check) = @_;
+    if ( ref $check eq "HASH" ) {
+        $check = utils::checkfactory($check);
+    }
 }
 
 sub checkfactory {
@@ -244,8 +255,8 @@ sub stampend {
 
 sub formatter {
     my ( $val, $unit, $obj ) = @_;
-    if ( $obj->{isHumanreadable} ){return $val};
-    unless (defined $unit){$unit = ""};
+    if ( $obj->{isHumanreadable} ) { return $val }
+    unless ( defined $unit ) { $unit = "" }
     if ( $unit eq "N" ) {
         return $val;
     }
@@ -293,6 +304,7 @@ sub ErrLog {
         }
     }
     say STDERR "[" . localtime . "] " . $type . " " . $sender . ":" . $msg;
+    STDERR->flush();
 }
 
 1;

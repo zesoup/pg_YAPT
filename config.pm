@@ -11,6 +11,8 @@ $config = {
     # No connection to the database will be opened.
     tests   => 0,
 
+    # redirec STDERR to a file
+    log => "/var/log/pg_YAPT",
 
     # An optional delimiter can be set. Mostly useful for
     # CSV(todo) and wall. 
