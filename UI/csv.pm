@@ -29,8 +29,7 @@ sub loop {
         $output = '';
         if ( ( $loopagain == -1 ) and ( $UIopts =~ "header" ) ) {
             foreach ( @{ $obj->{checks} } ) {
- if ( ref $_ eq "HASH" )
-{ $_ = utils::checkfactory($_) }
+                if ( ref $_ eq "HASH" ) { $_ = utils::checkfactory($_) }
 
                 unless ( $output eq "" ) {
                     $output .= $separator;
@@ -50,9 +49,8 @@ sub loop {
             {
                 $loopagain = 1;
             }
- if ( ref $currentCheck eq "HASH" )
-{ $currentCheck = utils::checkfactory($currentCheck) }
-            $currentCheck->execute( );
+            utils::ensureCheck($currentCheck);
+            $currentCheck->execute();
             my $tup = $currentCheck->{returnVal};
             if ( $firstcheck++ ) { $output .= $separator; }
             $output .= $tup->[0][0][0] . $currentCheck->{base}->{units}[0];

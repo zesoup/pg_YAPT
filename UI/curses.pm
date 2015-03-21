@@ -69,15 +69,13 @@ sub loop {
     sub displayTime {
         my $i = 0;
         my $metric;
-        foreach ( @{ $obj->{checks} } ) {
-            my $currentCheck = $config->{checks}->{$_->{check} };
-            my $checkname = ( $_->{label} or $_->{check} );
-
+        foreach my $currentCheck ( @{ $obj->{checks} } ) {
+            utils::ensureCheck( $currentCheck ) ;
             $currentCheck->execute( $_ );
 
-            my $tup = $currentCheck->{$checkname}->{returnVal};
+            my $tup = $currentCheck->{returnVal};
             $metric = $tup->[0][0][0];
-            my $unit    = $currentCheck->{units}[0] or "";
+            my $unit    = $currentCheck->{base}->{units}[0] or "";
             my $status  = $tup->[0][0][1];
             my $clr     = "White";
             my $scaling = ( $fields->[$i]->{'-width'} - 5 ) / ($tup->[0][2][0] or 1);

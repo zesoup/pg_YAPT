@@ -198,6 +198,13 @@ sub reloadConf {
     return $config;
 }
 
+sub ensureCheck{
+my ($check) = @_;
+if ( ref $check eq "HASH" ) {
+                $check = utils::checkfactory($check);
+     }
+}
+
 sub checkfactory {
     my ($target)    = @_;
     my $targetcheck = $target->{check};
