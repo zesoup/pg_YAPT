@@ -5,6 +5,7 @@ use 5.20.1;
 use File::stat;
 use File::Slurp;
 use POSIX;
+use Term::ANSIColor;
 
 use Config::IniFiles;
 use Digest::MD5 qw(md5_hex);
@@ -25,22 +26,18 @@ our $testmode;
 our $widenoverflow;
 
 sub cacheChecks {
+    my ($UI) = @_;
+
     open my $FH, ">", $cacheFile;
     use Data::Dumper;
 
     #say STDERR Dumper($config->{checks});
     $Data::Dumper::Deepcopy = 1;
     my $cache = {};
-    foreach my $check ( keys %{ $config->{checks} } ) {
-        $cache->{$check} = {};
-        foreach my $param ( keys %{ $config->{checks}->{$check} } ) {
-            if ( $param eq "config" ) { next; }
-            if ( $param eq "action" ) { next; }
-
-            $cache->{$check}->{$param} = $config->{checks}->{$check}->{$param};
-
-        }
-
+    foreach my $check ( @{ $UI->{checks} } ) {
+        $cache->{ $check->{identifier} }              = {};
+        $cache->{ $check->{identifier} }->{metric}    = $check->{metric};
+        $cache->{ $check->{identifier} }->{oldmetric} = $check->{oldmetric};
     }
 
     say $FH Dumper($cache);
@@ -55,11 +52,7 @@ sub loadCache {
     eval( join( '', <$FH> ) )
       || ( ErrLog( "could not parse cache", "UTILS", "WARN" ) and return );
     close $FH;
-    foreach my $check ( keys %{$VAR1} ) {
-        foreach my $param ( keys %{ $VAR1->{$check} } ) {
-            $config->{checks}->{$check}->{$param} = $VAR1->{$check}->{$param};
-        }
-    }
+    $config->{cache} = $VAR1;
 }
 
 sub widen {
@@ -123,12 +116,12 @@ sub getValueOfOptOrDefault {
     return $default;
 }
 
-sub redirectSTDERR{
+sub redirectSTDERR {
     my ($log) = @_;
-    say "Redirecting Log to $log";
-     open my $log_fh, '>>', $log;
+    say STDERR "Redirecting Log to $log";
+    open my $log_fh, '>>', $log;
     *STDERR = $log_fh;
-    binmode(STDERR, ":utf8");
+    binmode( STDERR, ":utf8" );
 }
 
 sub getMD5ofFile {
@@ -202,8 +195,8 @@ sub reloadConf {
           or print "could not load $key";
         bless( $config->{UI}->{$key}, $config->{UI}->{$key}->{template} );
     }
-    if (exists $config->{log}){
-    redirectSTDERR($config->{log});
+    if ( exists $config->{log} ) {
+        redirectSTDERR( $config->{log} );
     }
 
     return $config;
@@ -255,11 +248,11 @@ sub stampend {
 
 sub formatter {
     my ( $val, $unit, $obj ) = @_;
-    if ( $obj->{isHumanreadable} ) { return $val }
-    unless ( defined $unit ) { $unit = "" }
     if ( $unit eq "N" ) {
         return $val;
     }
+    if (($config->{humanreadable}eq 0 ) or ($obj->{base}->{isHumanreadable}) ) { return $val.$unit; }
+    unless ( defined $unit ) { $unit = "" }
     if ( $unit eq "B" ) {
         if ( abs($val) >= 99 ) {
             $val /= 1024;
@@ -270,6 +263,12 @@ sub formatter {
         if ( abs($val) >= 99 ) {
             $val /= 1024;
             $unit = "MB";
+        }
+    }
+    if ( $unit eq "MB" ) {
+        if ( abs($val) >= 1000 ) {
+            $val /= 1024;
+            $unit = "GB";
         }
     }
 
@@ -291,6 +290,15 @@ sub checkTiming {
             "INFO"
         );
     }
+}
+
+sub colorswitch {
+    my ($clr) = @_;
+
+    if ( $config->{color} eq 1 ) {
+        return color($clr);
+    }
+    return "";
 }
 
 sub ErrLog {

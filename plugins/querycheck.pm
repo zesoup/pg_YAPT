@@ -6,7 +6,6 @@ use POSIX;
 use 5.20.1;
 use utils;
 
-
 sub new {
     shift;
     my ($params) = @_;
@@ -22,7 +21,7 @@ sub new {
 sub execute {
     my ($obj) = @_;
     my $identifier = $obj->{identifier};
-    utils::stampbegin( $obj );
+    utils::stampbegin($obj);
     my $queryparams = undef;    #TODO
 
     # Call the Query and fetch the result.
@@ -33,16 +32,27 @@ sub execute {
     unless ( defined $obj->{metric} ) {
         $obj->{metric} = $obj->{querytest};
     }
-    unless ( exists $obj->{oldmetric} ) {
+
+    if ( ( not exists $obj->{oldmetric} ) and ( $obj->{base}->{isDelta} ) ) {
         $obj->{oldmetric} = $obj->{metric};
+
+        if ( exists $utils::config->{cache} ) {
+            $obj->{oldmetric} =
+              $utils::config->{cache}->{ $obj->{identifier} }->{oldmetric};
+        }
+        else {
+            $obj->{needsredo} = 1;
+        }
     }
+    else { $obj->{needsredo} = 0; }
+
     # Start processing.
 
-    if ( exists $obj->{base}->{action} ) {
+    if ( exists $obj->{base}->{action} ) { 
         $obj->{returnVal} = $obj->{base}->{action}($obj);
     }
-    elsif ( ( exists $obj->{base}->{isDelta} ) and ( $obj->{base}->{isDelta} ) ) {
-        $obj->{returnVal} =
+    elsif ( $obj->{base}->{isDelta} ) {
+          $obj->{returnVal} =
           [ [ [ $obj->{'metric'}[0][0] - $obj->{'oldmetric'}[0][0], 0 ] ] ];
     }
     else {
@@ -58,7 +68,7 @@ sub execute {
     }
     $obj->{oldmetric} = $obj->{metric};
 
-    utils::stampend( $obj );
+    utils::stampend($obj);
     utils::checkTiming($obj);
 
     return 0;

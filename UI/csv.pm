@@ -44,13 +44,18 @@ sub loop {
 
         my $firstcheck = 0;
         foreach my $currentCheck ( @{ $obj->{checks} } ) {
-            if (    ( $currentCheck->{isDelta} )
-                and ( not exists $currentCheck->{oldmetric} ) )
-            {
-                $loopagain = 1;
-            }
+           # if (    ( $currentCheck->{base}->{isDelta} )
+           #     and ( not exists $currentCheck->{oldmetric} ) )
+           # {
+           #     $loopagain = 1; say STDERR "LOOOP";
+           # }
             utils::ensureCheck($currentCheck);
+
             $currentCheck->execute();
+            if ($currentCheck->{needsredo}eq 1){
+            $loopagain=1;
+            }
+
             my $tup = $currentCheck->{returnVal};
             if ( $firstcheck++ ) { $output .= $separator; }
             $output .= $tup->[0][0][0] . $currentCheck->{base}->{units}[0];
@@ -60,7 +65,7 @@ sub loop {
 
         #at this point, loopagain is only set if current values are not valid.
 
-        if ( $config->{Reattachable} == 1 ) { utils::cacheChecks(); }
+        if ( $config->{Reattachable} == 1 ) { utils::cacheChecks($obj); }
 
         if ( $UIopts =~ "repeat" ) { $loopagain = 1 }
         $utils::config->{DB}->commit;

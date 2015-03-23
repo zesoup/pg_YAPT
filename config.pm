@@ -36,7 +36,6 @@ $config = {
             # first, define a "template".
             # pg_YAPT -l will have a list under *checks*.
             template   => "wall",
-
             updatetime => 1000000,    #ns
 
             # define the different checks.
@@ -48,10 +47,15 @@ $config = {
             checks     => [
               #  { check => "Time",    label => "Time" },
                 { check => "WAL",     label => "WAL" },
-                { check => "dirtyd", label=> "New Dirt" },
-		{ check => "dirty" , label=> "Total Dirt" },
+        #       { check => "dirtyd", label=> "New Dirt" },
+	#	{ check => "dirty" , label=> "Total Dirt" },
+                { check => "SIZE", label=>"DBSize"},
+                { check=>"I/U/D" },
+                { check=>"Serial/Index", label=>"SI"   },
                 { check => "User", label => "U" },
-                { check => "ReturnN", qParams=>["42",] },
+                { check=>"Locks"},
+                { check=>"txID"                 },
+              #  { check => "ReturnN", qParams=>["42",] },
                 { check => "UpTime",  label => "Uptime" }
             ]
         },

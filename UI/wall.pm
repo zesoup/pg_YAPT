@@ -5,7 +5,6 @@ package wall;
 use Time::HiRes qw(gettimeofday usleep nanosleep);
 use Term::ReadKey;
 use POSIX;
-use Term::ANSIColor;
 use utils;
 
 sub new {
@@ -16,12 +15,13 @@ sub new {
 
 }
 
+
 sub loop {
     my ( $obj, $config, $name, $opts ) = @_;
     my $configAge = $utils::configAge;
     my $loopcount = utils::getValueOfOptOrDefault( $opts, "loops=", -1 );
     my $fixwidth  = utils::getValueOfOptOrDefault( $opts, "width=", -1 );
-    my $separator = color("bright_yellow") . '│' . color("reset")
+    my $separator = utils::colorswitch("bright_yellow") . '│' . utils::colorswitch("reset")
       unless $utils::config->{delimiter};
     $obj->{hashsize} =
       @{ $config->{UI}->{$name}->{checks} };
@@ -48,10 +48,10 @@ sub loop {
             my $first = 0;
             foreach ( @{ $obj->{checks} } ) {
                 if ( $first++ ) { $line .= $separator; }
-                $line .= color("bright_green")
+                $line .= utils::colorswitch("bright_green")
                   . utils::widen( $wchar, ( $_->{label} or $_->{check} ),
                     $obj->{hashsize}, 1, " " )
-                  . color("reset");
+                  . utils::colorswitch("reset");
             }
             $line .= "\n";
 

@@ -44,19 +44,21 @@ sub main {
             { default => 0 }
         ],
         [],
-        [ 'config|c=s', "config to use",    { default => (dirname $0)."/config.pm" } ],
-        [ 'cache|C=s',  "cacheFile to use", { default => (dirname $0)."/.cache.pm" } ],
+        [ 'config|C=s', "config to use",    { default => (dirname $0)."/config.pm" } ],
+        [ 'cache=s',  "cacheFile to use", { default => (dirname $0)."/.cache.pm" } ],
         [],
         [
             'timing|t=i',
             "print checktimes longer X to stderr",
             { }
         ],
+        [ 'humanreadable|h', "print numbers as humanreadable",{default=>0} ],
+        [ 'color|c', "force colors on/off", {default => 0} ],
         [ 'test|T', "do not connect to the database", {} ],
         [ 'sync|S', "try to start on full seconds", {default=>0}    ],
         [ 'verbose|v', "print additional info. works good with list", {} ],
         [ 'veryverbose|V', "like verbose.. but worse (todo)",{}],
-        [ 'help|h',    "print usage message and exit" ],
+        [ 'help|H',    "print usage message and exit" ],
     );
     print( $usage->text ), exit if $opt->help;
     say "pg_YAPT V$version" if $opt->{verbose};
@@ -109,6 +111,10 @@ sub main {
     unless ( exists $opt->{ui} ) { $opt->{ui} = $utils::config->{defaultui}; }
     if ( exists $opt->{timing} ) { $utils::config->{timing} = $opt->{timing};}
     if ( exists $opt->{sync} ) { $utils::config->{sync}   = $opt->{sync};  }
+    if ( exists $opt->{color} ) { $utils::config->{color}   = $opt->{color};  }
+    if ( exists $opt->{humanreadable} ) { $utils::config->{humanreadable}   = $opt->{humanreadable};  }
+
+
     # Now check if the requested UI actually exists.
     if ( !exists $utils::config->{UI}->{ $opt->{ui} } ) {
         utils::ErrLog( "Unknown UI:" . $opt->{ui}, "main", "FATAL" );
