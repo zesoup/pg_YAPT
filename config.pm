@@ -47,8 +47,37 @@ $config = {
             checks     => [
               #  { check => "Time",    label => "Time" },
                 { check => "WAL",     label => "WAL" },
-        #       { check => "dirtyd", label=> "New Dirt" },
-	#	{ check => "dirty" , label=> "Total Dirt" },
+#                { check => "dirtyd", label=> "New Dirt" },
+#		{ check => "dirty" , label=> "Total Dirt" },
+                { check => "SIZE", label=>"DBSize"},
+                { check=>"RF", label=>"Ret, Fet" },
+                { check=>"I/U/D", label=>"Ins, Upd, Del" },
+                { check=>"Serial/Index", label=>"SI"   },
+                { check => "User", label => "Usr" },
+                { check=>"Locks"},
+                { check=>"txID"                 },
+              #  { check => "ReturnN", qParams=>["42",] },
+                { check => "UpTime",  label => "Uptime" }
+#                { check => "Inserted", label => "I" },
+#                { check => "Updated", label => "U" }
+#                { check => "Deleted", label => "D" },
+#                { check => "Returned", label => "R" },
+#                { check => "Fetched", label => "F" }
+
+            ]
+        },
+        curses => {
+            template => "curses",
+            checks   => [ { check => "UserFull" }, { check => "blkhitread" } ]
+        },
+        csv => {
+            template   => "csv",
+            updatetime => 1000000,
+            checks     => [
+              #  { check => "Time",    label => "Time" },
+                { check => "WAL",     label => "WAL" },
+               { check => "dirtyd", label=> "New Dirt" },
+                { check => "dirty" , label=> "Total Dirt" },
                 { check => "SIZE", label=>"DBSize"},
                 { check=>"I/U/D" },
                 { check=>"Serial/Index", label=>"SI"   },
@@ -57,45 +86,6 @@ $config = {
                 { check=>"txID"                 },
               #  { check => "ReturnN", qParams=>["42",] },
                 { check => "UpTime",  label => "Uptime" }
-            ]
-        },
-        curses => {
-            template => "curses",
-            checks   => [ { check => "UserFull" }, { check => "blkhitread" } ]
-        },
-        list => {
-            template => "list",
-            checks   => [ { check => "Act" } ]
-        },
-
-        json => {
-            template   => "json",
-            updatetime => 1000000,
-            checks     => [
-                { check => "Random" },
-                { check => "WAL" },
-                { check => "User" },
-                { check => "UpTime" },
-                { check => "MaxBlt" },
-                { check => "BlkAcc" },
-                { check => "TotRows" },
-                { check => "Locks" },
-                { check => "txID" }
-            ]
-        },
-        csv => {
-            template   => "csv",
-            updatetime => 1000000,
-            checks     => [
-                { check => "TotRows" },
-                { check => "WAL" },
-                { check => "User" },
-                { check => "UpTime" },
-                { check => "MaxBlt" },
-                { check => "BlkAcc" },
-                { check => "TotRows" },
-                { check => "Locks" },
-                { check => "txID" }
             ]
           }
 

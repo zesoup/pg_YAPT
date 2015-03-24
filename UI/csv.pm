@@ -58,7 +58,7 @@ sub loop {
 
             my $tup = $currentCheck->{returnVal};
             if ( $firstcheck++ ) { $output .= $separator; }
-            $output .= $tup->[0][0][0] . $currentCheck->{base}->{units}[0];
+            $output .= utils::formatter($tup->[0][0][0], $currentCheck->{base}->{units}[0]) ;
         }
 
         unless ($loopagain) { say $output; }

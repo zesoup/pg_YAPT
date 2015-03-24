@@ -75,7 +75,7 @@ $currentCheck->execute();
                 my $status = $tup->[0][$i][1];
 
                 if ($i){
-                $valuestring .="/"}
+                $valuestring .=" "}
                     $valuestring .= utils::formatter($metric, $unit, $currentCheck );
             }
             if ( ( $i++ != 0 ) and ( $i != $obj->{hashsize}+1 ) ) {

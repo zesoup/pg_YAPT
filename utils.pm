@@ -118,7 +118,7 @@ sub getValueOfOptOrDefault {
 
 sub redirectSTDERR {
     my ($log) = @_;
-    say STDERR "Redirecting Log to $log";
+    #say STDERR "Redirecting Log to $log";
     open my $log_fh, '>>', $log;
     *STDERR = $log_fh;
     binmode( STDERR, ":utf8" );
@@ -248,10 +248,22 @@ sub stampend {
 
 sub formatter {
     my ( $val, $unit, $obj ) = @_;
+
+    if (($config->{humanreadable}eq 0 ) or ($obj->{base}->{isHumanreadable}) ) { 
+if ($unit eq "N"){$unit = '';}
+return $val.$unit; }
+
+
     if ( $unit eq "N" ) {
-        return $val;
+        $unit = "";
+        if ( (abs($val) >= 99)){
+              $unit = 'K';
+              $val /= 1000}
+        if ( (abs($val) >= 99)){
+              $unit = 'M';
+              $val /= 1000}
     }
-    if (($config->{humanreadable}eq 0 ) or ($obj->{base}->{isHumanreadable}) ) { return $val.$unit; }
+
     unless ( defined $unit ) { $unit = "" }
     if ( $unit eq "B" ) {
         if ( abs($val) >= 99 ) {

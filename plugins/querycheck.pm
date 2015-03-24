@@ -52,8 +52,20 @@ sub execute {
         $obj->{returnVal} = $obj->{base}->{action}($obj);
     }
     elsif ( $obj->{base}->{isDelta} ) {
-          $obj->{returnVal} =
-          [ [ [ $obj->{'metric'}[0][0] - $obj->{'oldmetric'}[0][0], 0 ] ] ];
+        $obj->{returnVal} = [];
+        for(my $r=0;$r< scalar @{ $obj->{metric} }; $r++) {
+            my $rowArr = [];
+            for(my $c=0;$c < scalar @{$obj->{metric}[$r] }; $c++ ) {
+                push( @{$rowArr}, [ $obj->{metric}[$r][$c]-$obj->{oldmetric}[$r][$c], 0 ] );
+            }
+            push( @{ $obj->{returnVal} }, $rowArr );
+        }
+
+
+
+      #    $obj->{returnVal} =
+      #    [ [ [ $obj->{'metric'}[0][0] - $obj->{'oldmetric'}[0][0], 0 ] ] ];
+
     }
     else {
         $obj->{returnVal} = [];
