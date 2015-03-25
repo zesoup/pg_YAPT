@@ -3,7 +3,6 @@ use warnings;
 use strict;
 use 5.20.1;
 use File::stat;
-use File::Slurp;
 use POSIX;
 use Term::ANSIColor;
 
@@ -118,6 +117,7 @@ sub getValueOfOptOrDefault {
 
 sub redirectSTDERR {
     my ($log) = @_;
+
     #say STDERR "Redirecting Log to $log";
     open my $log_fh, '>>', $log;
     *STDERR = $log_fh;
@@ -249,30 +249,34 @@ sub stampend {
 sub formatter {
     my ( $val, $unit, $obj ) = @_;
 
-    if (($config->{humanreadable}eq 0 ) or ($obj->{base}->{isHumanreadable}) ) { 
-if ($unit eq "N"){$unit = '';}
-return $val.$unit; }
-
+    if (   ( $config->{humanreadable} eq 0 )
+        or ( $obj->{base}->{isHumanreadable} ) )
+    {
+        if ( $unit eq "N" ) { $unit = ''; }
+        return $val . $unit;
+    }
 
     if ( $unit eq "N" ) {
         $unit = "";
-        if ( (abs($val) >= 99)){
-              $unit = 'K';
-              $val /= 1000}
-        if ( (abs($val) >= 99)){
-              $unit = 'M';
-              $val /= 1000}
+        if ( ( abs($val) >= 999 ) ) {
+            $unit = 'K';
+            $val /= 1000;
+        }
+        if ( ( abs($val) >= 999 ) ) {
+            $unit = 'M';
+            $val /= 1000;
+        }
     }
 
     unless ( defined $unit ) { $unit = "" }
     if ( $unit eq "B" ) {
-        if ( abs($val) >= 99 ) {
+        if ( abs($val) >= 999 ) {
             $val /= 1024;
             $unit = "KB";
         }
     }
     if ( $unit eq "KB" ) {
-        if ( abs($val) >= 99 ) {
+        if ( abs($val) >= 999 ) {
             $val /= 1024;
             $unit = "MB";
         }
@@ -284,7 +288,7 @@ return $val.$unit; }
         }
     }
 
-    return sprintf( "%.1f", $val ) . $unit;
+    return sprintf( "%.0f", $val ) . $unit;
 }
 
 sub checkTiming {

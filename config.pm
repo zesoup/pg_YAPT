@@ -45,27 +45,40 @@ $config = {
             # checkimplementation.
             # A list is available via pg_YAPT -l
             checks     => [
-              #  { check => "Time",    label => "Time" },
-                { check => "WAL",     label => "WAL" },
-#                { check => "dirtyd", label=> "New Dirt" },
-#		{ check => "dirty" , label=> "Total Dirt" },
+                { check => "WAL",     label => "WAL/Files" },
                 { check => "SIZE", label=>"DBSize"},
-                { check=>"RF", label=>"Ret, Fet" },
-                { check=>"I/U/D", label=>"Ins, Upd, Del" },
-                { check=>"Serial/Index", label=>"SI"   },
+                { check=>"Serial/Index"},
                 { check => "User", label => "Usr" },
                 { check=>"Locks"},
                 { check=>"txID"                 },
-              #  { check => "ReturnN", qParams=>["42",] },
                 { check => "UpTime",  label => "Uptime" }
-#                { check => "Inserted", label => "I" },
-#                { check => "Updated", label => "U" }
-#                { check => "Deleted", label => "D" },
-#                { check => "Returned", label => "R" },
-#                { check => "Fetched", label => "F" }
 
             ]
         },
+tuples => {
+            # first, define a "template".
+            # pg_YAPT -l will have a list under *checks*.
+            template   => "wall",
+            updatetime => 1000000,    #ns
+
+            # define the different checks.
+            # An Array of Hashes is expected.
+            # [ {check1}, {check2}, {check3} ]
+            # Checks refer via 'check' to the
+            # checkimplementation.
+            # A list is available via pg_YAPT -l
+            checks     => [
+                { check => "AccTupleTable"},
+                { check => "AccTupleIndex" },
+                { check => "Inserted", label => "Inserted" },
+                { check => "Updated", label => "Updated" },
+                { check => "Deleted", label => "Deleted" },
+                { check => "Returned",label => "Returned" },
+                { check => "Fetched", label => "Fetched" }
+
+            ]
+        },
+
         curses => {
             template => "curses",
             checks   => [ { check => "UserFull" }, { check => "blkhitread" } ]
