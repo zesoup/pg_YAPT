@@ -119,7 +119,7 @@ sub redirectSTDERR {
     my ($log) = @_;
 
     #say STDERR "Redirecting Log to $log";
-    open my $log_fh, '>>', $log;
+    open my $log_fh, '>>', $log or (ErrLog("Could not bind new errorstream.", "UTILS", "WARN") and return );
     *STDERR = $log_fh;
     binmode( STDERR, ":utf8" );
 }
