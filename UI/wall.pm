@@ -29,7 +29,6 @@ sub loop {
     $| = 1;
 # Initialize with a newline. This is will cause an unnecessary newline on startup, but will make sure
 # a sighup will work fine.
-
     while ( $loopcount-- ) {
         $utils::widenoverflow = 0;
         $utils::config->{DB}->commit;

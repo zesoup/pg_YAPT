@@ -7,7 +7,7 @@ Yet another postgres top
 ##Install:
 Install dependencies for debian(jessie):
 
-    apt-get install libgetopt-long-descriptive-perl libconfig-inifiles-perl libdbd-pg-perl libterm-readkey-perl libcurses-ui-perl
+    apt-get install libgetopt-long-descriptive-perl libconfig-inifiles-perl libdbd-pg-perl libterm-readkey-perl
 
 
 ##Usage:

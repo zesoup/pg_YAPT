@@ -1,0 +1,3 @@
+#! /bin/bash
+
+/usr/share/pgyapt/pg_YAPT.pl $@

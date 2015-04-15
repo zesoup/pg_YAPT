@@ -7,18 +7,17 @@ use 5.20.1;
 # Set includepath to the local position. This Program will rely heavily on
 # local files.
 use File::Basename;
-# Utils provide basic tools and utils. e.G Config-Handle.
-use lib ( dirname $0); #wherever pg_YAPT is, thats where the includes are!
-use utils;
-$utils::checkDirectory = (dirname $0)."/checks"; #dirty for now
 
+# Utils provide basic tools and utils. e.G Config-Handle.
+use lib ( dirname $0);    #wherever pg_YAPT is, thats where the includes are!
+use utils;
+$utils::checkDirectory = ( dirname $0) . "/checks";    #dirty for now
 
 # Option Parser
 use Getopt::Long;
 use Getopt::Long::Descriptive;
 
 # On Sighub, reload config and continue with thatever you did.
-
 
 sub main {
     my $version = "0.0.4";
@@ -27,10 +26,10 @@ sub main {
     my ( $opt, $usage ) = describe_options(
         "Usage: pg_YAPT [opts]",
         [],
-        [ 'ui|u=s',     "override the UI-choice from config.  ", {} ],
-        [ 'list|l',     "list all checks and configured UIs",    {} ],
-        [ 'uiopts|o=s', "UI-specific options to push down",      {} ],
-        [ 'addcheck|a=s',"add these checks",{}                      ],
+        [ 'ui|u=s',       "override the UI-choice from config.  ", {} ],
+        [ 'list|l',       "list all checks and configured UIs",    {} ],
+        [ 'uiopts|o=s',   "UI-specific options to push down",      {} ],
+        [ 'addcheck|a=s', "add these checks",                      {} ],
         [ 'dbopts|d=s',   "use this connectionstring",             {} ],
         [],
         [
@@ -44,34 +43,41 @@ sub main {
             { default => 0 }
         ],
         [],
-        [ 'config|C=s', "config to use",    { default => (dirname $0)."/config.pm" } ],
-        [ 'cache=s',  "cacheFile to use", { default => (dirname $0)."/.cache.pm" } ],
-        [],
         [
-            'timing|t=i',
-            "print checktimes longer X to stderr",
-            { }
+            'config|C=s',
+            "config to use",
+            { default => ( dirname $0) . "/config.pm" }
         ],
-        [ 'humanreadable|h', "print numbers as humanreadable",{default=>0} ],
-        [ 'color|c', "force colors on/off", {default => 0} ],
-        [ 'test|T', "do not connect to the database", {} ],
-        [ 'sync|S', "try to start on full seconds", {default=>0}    ],
-        [ 'verbose|v', "print additional info. works good with list", {} ],
-        [ 'veryverbose|V', "like verbose.. but worse (todo)",{}],
-        [ 'help|H',    "print usage message and exit" ],
+        [
+            'cache=s',
+            "cacheFile to use",
+            { default => ( dirname $0) . "/.cache.pm" }
+        ],
+        [],
+        [ 'timing|t=i',      "print checktimes longer X to stderr", {} ],
+        [ 'humanreadable|h', "print numbers as humanreadable",      {} ],
+        [ 'color|c',         "force colors on/off",                 {} ],
+        [ 'test|T',          "do not connect to the database",      {} ],
+        [ 'sync|S', "try to start on full seconds", { default => 0 } ],
+        [ 'verbose|v',     "print additional info. works good with list", {} ],
+        [ 'veryverbose|V', "like verbose.. but worse (todo)",             {} ],
+        [ 'help|H',        "print usage message and exit" ],
     );
     print( $usage->text ), exit if $opt->help;
     say "pg_YAPT V$version" if $opt->{verbose};
+
     # delete the cachefile if asked to
     # doesnt rely on the config, so we can do it very early on
     if ( $opt->{deletecache} ) {
         unlink $opt->{cache};
     }
+
     # now handle the Config.
     # reset the utils::config, set the targetfiles properly and force a reload.
     $utils::config     = undef;
     $utils::configFile = $opt->{config};
     utils::checkAndReloadConfig();
+
 # if we're asked to be reattachable reset the targetfile to cache and load again.
 # because the contents may be blessed, we need to load the defaultconfig first to make
 # sure all includes allready exist.
@@ -82,8 +88,11 @@ sub main {
         utils::loadCache();
         $utils::config->{Reattachable} = 1;
     }
-    if ($opt->{test}){$utils::config->{tests} = 1;};
-    if (exists $opt->{dbopts}){$utils::config->{database}->{connection}=$opt->{dbopts}}
+    if ( $opt->{test} ) { $utils::config->{tests} = 1; }
+    if ( exists $opt->{dbopts} ) {
+        $utils::config->{database}->{connection} = $opt->{dbopts};
+    }
+
     # config is now loaded. check if there's an override for the UI.
     # If not, reset the $opt->{ui} value with the default.
     if ( $opt->{list} ) {
@@ -108,12 +117,20 @@ sub main {
         }
         say "";
     }
-    unless ( exists $opt->{ui} ) { $opt->{ui} = $utils::config->{defaultui}; }
-    if ( exists $opt->{timing} ) { $utils::config->{timing} = $opt->{timing};}
-    if ( exists $opt->{sync} ) { $utils::config->{sync}   = $opt->{sync};  }
-    if ( exists $opt->{color} ) { $utils::config->{color}   = $opt->{color};  }
-    if ( exists $opt->{humanreadable} ) { $utils::config->{humanreadable}   = $opt->{humanreadable};  }
 
+
+    unless ( exists $opt->{ui} ) { $opt->{ui} = $utils::config->{defaultui}; }
+    if ( exists $opt->{timing} ) { $utils::config->{timing} = $opt->{timing}; }
+    if ( exists $opt->{sync} )   { $utils::config->{sync}   = $opt->{sync}; }
+
+    if ( exists $opt->{color} )  
+		{ $utils::config->{color}  = $opt->{color}; }
+    elsif ( not exists $utils::config->{color} ) 
+		{ $utils::config->{color} = 0 }
+    if ( exists $opt->{humanreadable} ) 
+		{$utils::config->{humanreadable} = $opt->{humanreadable}; ;}
+    elsif (not exists $utils::config->{humanreadable} ) 
+		{$utils::config->{humanreadable} = 0;}
 
     # Now check if the requested UI actually exists.
     if ( !exists $utils::config->{UI}->{ $opt->{ui} } ) {
@@ -128,10 +145,10 @@ sub main {
         say "Existing UIs:";
         foreach ( sort keys %{ $utils::config->{UI} } ) {
             my $line = $_;
-            if ( $opt->{verbose} and ($utils::config->{defaultui} eq $_ )) {
+            if ( $opt->{verbose} and ( $utils::config->{defaultui} eq $_ ) ) {
                 $line = "*" . $line;
             }
-            elsif ($opt->{verbose}) { $line = ' ' . $line }
+            elsif ( $opt->{verbose} ) { $line = ' ' . $line }
             if ( $opt->{verbose} ) {
                 $line = "["
                   . $utils::config->{UI}->{$_}->{template} . "]"
@@ -143,10 +160,15 @@ sub main {
         }
         exit(0);
     }
-    if(exists $opt->{addcheck}){
-    my $newchecks = eval('['.$opt->{addcheck}.']');
-    push (@{$utils::config->{UI}->{$opt->{ui}}->{checks}}, eval($opt->{addcheck}) );}
-    #use Data::Dumper; say Dumper($utils::config->{UI}->{$opt->{ui}}->{checks} );
+    if ( exists $opt->{addcheck} ) {
+        my $newchecks = eval( '[' . $opt->{addcheck} . ']' );
+        push(
+            @{ $utils::config->{UI}->{ $opt->{ui} }->{checks} },
+            eval( $opt->{addcheck} )
+        );
+    }
+
+   #use Data::Dumper; say Dumper($utils::config->{UI}->{$opt->{ui}}->{checks} );
     ##### LOOP #####
     # Everyting is set.
     # While the requested UI asks to continue, loop over it.

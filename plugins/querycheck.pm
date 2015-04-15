@@ -30,17 +30,17 @@ sub execute {
 
     # Make sure all values exist
     unless ( defined $obj->{metric} ) {
-        $obj->{metric} = $obj->{querytest};
+        $obj->{metric} = $obj->{base}->{querytest};
     }
 
-    if ( ( not exists $obj->{oldmetric} ) and ( $obj->{base}->{isDelta} ) ) {
+    if ( not exists $obj->{oldmetric} ) {
         $obj->{oldmetric} = $obj->{metric};
 
         if ( exists $utils::config->{cache} ) {
             $obj->{oldmetric} =
               $utils::config->{cache}->{ $obj->{identifier} }->{oldmetric};
         }
-        else {
+        elsif ( $obj->{base}->{isDelta} ) {
             $obj->{needsredo} = 1;
         }
     }
@@ -48,23 +48,21 @@ sub execute {
 
     # Start processing.
 
-    if ( exists $obj->{base}->{action} ) { 
+    if ( exists $obj->{base}->{action} ) {
         $obj->{returnVal} = $obj->{base}->{action}($obj);
     }
     elsif ( $obj->{base}->{isDelta} ) {
         $obj->{returnVal} = [];
-        for(my $r=0;$r< scalar @{ $obj->{metric} }; $r++) {
+        for ( my $r = 0 ; $r < scalar @{ $obj->{metric} } ; $r++ ) {
             my $rowArr = [];
-            for(my $c=0;$c < scalar @{$obj->{metric}[$r] }; $c++ ) {
-                push( @{$rowArr}, [ $obj->{metric}[$r][$c]-$obj->{oldmetric}[$r][$c], 0 ] );
+            for ( my $c = 0 ; $c < scalar @{ $obj->{metric}[$r] } ; $c++ ) {
+                push(
+                    @{$rowArr},
+                    [ $obj->{metric}[$r][$c] - $obj->{oldmetric}[$r][$c], 0 ]
+                );
             }
             push( @{ $obj->{returnVal} }, $rowArr );
         }
-
-
-
-      #    $obj->{returnVal} =
-      #    [ [ [ $obj->{'metric'}[0][0] - $obj->{'oldmetric'}[0][0], 0 ] ] ];
 
     }
     else {

@@ -10,7 +10,8 @@ $config = {
     # tests will cause try-runs.
     # No connection to the database will be opened.
     tests   => 0,
-
+    humanreadable => 1,
+    color => 1,
     # redirec STDERR to a file
     log => "/var/log/pg_YAPT",
 
@@ -25,8 +26,8 @@ $config = {
     
     database => {
         maxAttempts    => 6,
-        reconnectdelay => 0.75,
-        connection     => "port=5432;host=localhost;dbname=postgres;",
+        reconnectdelay => 3,
+        connection     => "port=5432;host=127.0.0.1;dbname=postgres;user=postgres",
     },
 
     defaultui => 'default',
@@ -47,10 +48,10 @@ $config = {
             checks     => [
                 { check => "WAL",     label => "WAL/Files" },
                 { check => "SIZE", label=>"DBSize"},
+		{ check=> "BlkAcc", label=>"BlkAcc"},
                 { check=>"Serial/Index"},
-                { check => "User", label => "Usr" },
-                { check=>"Locks"},
-                { check=>"txID"                 },
+                { check => "User", label => "User/Wait" },
+                { check=>"Locks", label=>"Locks/Wait"},
                 { check => "UpTime",  label => "Uptime" }
 
             ]
@@ -68,7 +69,6 @@ tuples => {
             # checkimplementation.
             # A list is available via pg_YAPT -l
             checks     => [
-                { check => "AccTupleTable"},
                 { check => "AccTupleIndex" },
                 { check => "Inserted", label => "Inserted" },
                 { check => "Updated", label => "Updated" },
@@ -80,8 +80,32 @@ tuples => {
         },
 
         curses => {
+            updatetime => 1000000,
             template => "curses",
-            checks   => [ { check => "UserFull" }, { check => "blkhitread" } ]
+            checks=>[
+                { check => "UserCurses", label => "User/Wait" },
+                { check=>"Locks", label=>"Locks/Wait"},
+                { check=>"txID"                 },
+                { check => "UpTime",  label => "Uptime" },
+                {check=>"WAL"},
+		"linebreak",
+                { check=>"TotRows", label=>"DBRows"},
+                { check => "SIZE", label=>"DBSize"},
+		"linebreak",
+                { check=>"SysBlk"                 },
+                { check=>"BlkAcc"                 },
+                { check => "AccTupleTable"},
+                { check => "AccTupleIndex" },
+		"linebreak","linebreak",
+                { check => "Inserted", label => "Inserted" },
+                { check => "Updated", label => "Updated" },
+                { check => "Deleted", label => "Deleted" },
+                { check => "Returned",label => "Returned" },
+                { check => "Fetched", label => "Fetched" },
+		#	{ check => "UserFull" }, 
+		#	{ check => "blkhitread" },
+			{ check => "Backends", position=>"bottomlist"}
+			]
         },
         csv => {
             template   => "csv",
@@ -89,7 +113,7 @@ tuples => {
             checks     => [
               #  { check => "Time",    label => "Time" },
                 { check => "WAL",     label => "WAL" },
-               { check => "dirtyd", label=> "New Dirt" },
+                { check => "dirtyd", label=> "New Dirt" },
                 { check => "dirty" , label=> "Total Dirt" },
                 { check => "SIZE", label=>"DBSize"},
                 { check=>"I/U/D" },

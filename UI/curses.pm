@@ -2,14 +2,14 @@ use 5.20.1;
 
 package curses;
 
-use Time::HiRes qw(usleep nanosleep);
+use Time::HiRes qw(gettimeofday usleep nanosleep);
 use Term::ReadKey;
 use POSIX;
-use utf8;
+
+#use utf8;
+use Term::Cap;
 
 use utils;
-use Curses;
-use Curses::UI;
 
 sub new {
     my (%params) = @_;
@@ -25,90 +25,123 @@ sub exitCurses {
 }
 
 sub loop {
-    my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
 
     my ( $obj, $config ) = @_;
     my $output = {};
-    my $cui = new Curses::UI( -color_support => 1 );
 
-    my $window = $cui->add( 'window1', 'Window', -border => 0, );
+    my $t = Term::Cap->Tgetent;
 
-    my $pinglab = $window->add(
-        'ping', 'Label',
-        -border => 0,
-        -width  => 5,
-        -text   => ''
-    );
-
-    my $stat = $window->add(
-        'status', 'Label',
-        -border        => 0,
-        -width         => $wchar,
-        -textalignment => 'middle',
-        -text          => ''
-    );
-
-    my $bars   = 2;
-    my $fields = [];
-    for ( my $i = 0 ; $i < $bars ; $i++ ) {
-        push(
-            @{$fields},
-            $window->add(
-                "label$i", 'Label',
-                -width         => $wchar / 2,
-                -border        => 0,
-                -padtop        => $i + 1,
-                -padleft       => 0,
-                -textalignment => 'right',
-                -text          => '',
-            )
-        );
-    }
     my $ping = 0;
+    my $i    = 0;
 
-    sub displayTime {
-        my $i = 0;
-        my $metric;
+    while (1) {
+        my $toprowContent = 0;
+        my $linestart     = gettimeofday;
+        my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
+        my $wchar  = 80;
+        my $symbol = ':';
+        if ( $ping++ % 2 ) { $symbol = ' '; }
+        print $t->Tgoto( "cm", 20, 0 );    # 0-based
+        print( "[" . $symbol . "] pgyapt v1.0" );
+
+
         foreach my $currentCheck ( @{ $obj->{checks} } ) {
-            utils::ensureCheck( $currentCheck ) ;
-            $currentCheck->execute( $_ );
-
+            if ( $currentCheck eq "linebreak" ) {
+                $toprowContent += $wchar - ( $toprowContent % $wchar );
+                next;
+            }
+            utils::ensureCheck($currentCheck);
+            $currentCheck->execute($_);
+            my $metric;
             my $tup = $currentCheck->{returnVal};
             $metric = $tup->[0][0][0];
-            my $unit    = $currentCheck->{base}->{units}[0] or "";
-            my $status  = $tup->[0][0][1];
-            my $clr     = "White";
-            my $scaling = ( $fields->[$i]->{'-width'} - 5 ) / ($tup->[0][2][0] or 1);
-            my $freebackends = ( $tup->[0][0][0] - $tup->[0][1][0] ) * $scaling;
-            my $waitingbackends = $tup->[0][1][0] * $scaling;
+            my $unit   = $currentCheck->{base}->{units}[0] or "";
+            my $status = $tup->[0][0][1];
+            my $clr    = "White";
+            my $r      = 6;
 
-            if ( $tup->[0][0][0] > 1000 ) {
-                $tup->[0][0][0] = '' . int( $tup->[0][0][0] / 1000 ) . 'k';
+            if ( $currentCheck->{position} eq 'bottomlist' ) {
+                print $t->Tgoto( "cm", 0, $r++ );
+		print utils::colorswitch("bold white on_blue");
+		foreach my $colname (@{ $currentCheck->{base}->{colnames} }){
+                        print( ""
+                              . utils::widen( $wchar, $colname . '',7, 0,
+                                " " ) );}
+		print utils::colorswitch("reset");
+
+
+
+                foreach my $row ( @{$tup} ) {
+                    print $t->Tgoto( "cm", 0, $r++ );
+                    if ( $row->[4][0] ) {
+                        print utils::colorswitch("bold yellow on_red");
+                    }
+                    elsif ( $row->[6][0] eq 'active' ) {
+                        print utils::colorswitch("black on_bright_green");
+                    }
+                    foreach my $val ( @{$row} ) {
+                        print( ""
+                              . utils::widen( $wchar, $val->[0] . '', 7, 0,
+                                " " ) );
+                    }
+                    print utils::colorswitch("reset");
+                }
             }
-            if ( $tup->[0][1][0] > 1000 ) {
-                $tup->[0][1][0] = '' . int( $tup->[0][1][0] / 1000 ) . 'k';
+            else {
+                my $metricText = '';
+                my $iteration  = 0;
+                foreach my $col ( @{ $tup->[0] } ) {
+                    if ( $iteration++ ) { $metricText .= '/'; }
+                    $metricText .=
+                      utils::formatter( $col->[0], $unit, $currentCheck );
+                }
+                $metricText =
+                  utils::fillwith( " ",
+                    3 + ( $iteration *2 ) - length($metricText) )
+                  . $metricText;
+                my $linesize =
+                  length( $currentCheck->{identifier} . ": " . $metricText );
+                if ( ( $toprowContent % $wchar ) > ( $wchar - $linesize ) ) {
+                    $toprowContent += $wchar - ( $toprowContent % $wchar );
+                }
+                print $t->Tgoto(
+                    "cm",
+                    $toprowContent % $wchar,
+                    1 + int( $toprowContent / $wchar )
+                );
+                $toprowContent += $linesize;
+
+                print(  ""
+                      . $currentCheck->{identifier} . ":"
+                      . utils::colorswitch("bold blue")
+                      . $metricText
+                      . utils::colorswitch("reset")
+                      . "" );
+
             }
-            my $title = $tup->[0][0][0] . "/" . $tup->[0][1][0];
-            $title =
-              utils::fillwith( " ",
-                8 - length( $tup->[0][0][0] . "/" . $tup->[0][1][0] ) )
-              . $title;
-            $fields->[ $i++ ]->text( utils::fillwith( "▭", $freebackends )
-                  . utils::fillwith( "▬", $waitingbackends ) . ""
-                  . $title );
+        }
+        $utils::config->{DB}->commit;
+	print `clear`;
+        my $now = gettimeofday;
+        my $timetosleep =
+          ( $obj->{updatetime} - ( $now - $linestart ) * 1000000 );
+
+        if ( $utils::config->{sync} ) {
+            my $sleepfix = ( $now * 1000 ) % ( $obj->{updatetime} / 1000 );
+            if ( $sleepfix * 1000 > $obj->{updatetime} / 2.0 ) {
+                $sleepfix = -( $obj->{updatetime} / 1000 - $sleepfix );
+            }
+            $timetosleep = $timetosleep - 300 * $sleepfix;
 
         }
-        my $symbol = '⇋';
-        if ( $ping++ % 2 ) { $symbol = '⇌'; }
-        $pinglab->text( "" . $symbol . "" );
-        $stat->text( localtime . " [Still in Development]" );
-        $utils::config->{DB}->commit;
-    }
 
-    $cui->set_binding( sub { exit; }, "\cQ" );
-    $cui->set_binding( sub { exit; }, "\cC" );
-    $cui->set_timer( 'update_time', \&displayTime, 1 );
-    $cui->mainloop();
+        if ( $timetosleep < 0 ) {
+            utils::ErrLog( "Queries take too long for loop!", "WALL", "WARN" );
+            $timetosleep = 0;
+        }
+        usleep $timetosleep;
+
+    }
 
 }
 1;

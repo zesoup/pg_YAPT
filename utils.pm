@@ -72,7 +72,7 @@ sub widen {
     my $widthLeft  = floor( $widthper / 2 - $textwidth / 2 );
     my $widthRight = ceil( $widthper / 2 - $textwidth / 2 );
     my $out =
-      fillwith( $char, $widthLeft ) . $text . fillwith( $char, $widthRight );
+      fillwith( $char, $widthLeft ) . $text. fillwith( $char, $widthRight );
 
     if ( defined $widenoverflow ) {
         $widenoverflow = $widthLeft + $widthRight;
@@ -119,7 +119,9 @@ sub redirectSTDERR {
     my ($log) = @_;
 
     #say STDERR "Redirecting Log to $log";
-    open my $log_fh, '>>', $log or (ErrLog("Could not bind new errorstream.", "UTILS", "WARN") and return );
+    open my $log_fh, '>>', $log
+      or ( ErrLog( "Could not bind new errorstream.", "UTILS", "WARN" )
+        and return );
     *STDERR = $log_fh;
     binmode( STDERR, ":utf8" );
 }
@@ -248,7 +250,7 @@ sub stampend {
 
 sub formatter {
     my ( $val, $unit, $obj ) = @_;
-
+    if ( not defined $unit ) { $unit = "" }
     if (   ( $config->{humanreadable} eq 0 )
         or ( $obj->{base}->{isHumanreadable} ) )
     {
