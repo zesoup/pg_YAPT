@@ -72,7 +72,7 @@ sub widen {
     my $widthLeft  = floor( $widthper / 2 - $textwidth / 2 );
     my $widthRight = ceil( $widthper / 2 - $textwidth / 2 );
     my $out =
-      fillwith( $char, $widthLeft ) . $text. fillwith( $char, $widthRight );
+      fillwith( $char, $widthLeft ) . $text . fillwith( $char, $widthRight );
 
     if ( defined $widenoverflow ) {
         $widenoverflow = $widthLeft + $widthRight;
@@ -333,4 +333,29 @@ sub ErrLog {
     STDERR->flush();
 }
 
+{
+    my $loopStart;
+
+    sub loopSleep {
+        my ($updatetime) = @_;
+        my $now = gettimeofday;
+        if ( not defined $loopStart ) { $loopStart = $now }
+        my $timetosleep = ( $updatetime - ( $now - $loopStart ) * 1000000 );
+
+        if ( $utils::config->{sync} ) {
+            my $sleepfix = ( $now * 1000 ) % ( $updatetime / 1000 );
+            if ( $sleepfix * 1000 > $updatetime / 2.0 ) {
+                $sleepfix = -( $updatetime / 1000 - $sleepfix );
+            }
+            $timetosleep = $timetosleep - 300 * $sleepfix;
+        }
+
+        if ( $timetosleep < 0 ) {
+            utils::ErrLog( "Queries take too long for loop!", "WALL", "WARN" );
+            $timetosleep = 0;
+        }
+        usleep $timetosleep;
+        $loopStart = gettimeofday;
+    }
+}
 1;

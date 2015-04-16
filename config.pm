@@ -27,7 +27,7 @@ $config = {
     database => {
         maxAttempts    => 6,
         reconnectdelay => 3,
-        connection     => "port=5432;host=127.0.0.1;dbname=postgres;user=postgres",
+        connection     => "port=5432;host=127.0.0.1;dbname=jsc;user=jsc",
     },
 
     defaultui => 'default',
@@ -91,6 +91,7 @@ tuples => {
 		"linebreak",
                 { check=>"TotRows", label=>"DBRows"},
                 { check => "SIZE", label=>"DBSize"},
+                { check=>"Serial/Index", label=>"SI"   },
 		"linebreak",
                 { check=>"SysBlk"                 },
                 { check=>"BlkAcc"                 },
@@ -102,9 +103,7 @@ tuples => {
                 { check => "Deleted", label => "Deleted" },
                 { check => "Returned",label => "Returned" },
                 { check => "Fetched", label => "Fetched" },
-		#	{ check => "UserFull" }, 
-		#	{ check => "blkhitread" },
-			{ check => "Backends", position=>"bottomlist"}
+		{ check => "Backends", position=>"bottomlist", action=>"user"}
 			]
         },
         csv => {

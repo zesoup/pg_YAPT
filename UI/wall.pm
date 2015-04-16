@@ -90,24 +90,7 @@ $currentCheck->execute();
 
         $utils::config->{DB}
           ->commit;    # this commit will prevent idle_in_transaction marks.
-        my $now = gettimeofday;
-        my $timetosleep =
-          ( $obj->{updatetime} - ( $now - $linestart ) * 1000000 );
-
-        if ( $utils::config->{sync} ) {
-            my $sleepfix = ( $now * 1000 ) % ( $obj->{updatetime} / 1000 );
-            if ( $sleepfix * 1000 > $obj->{updatetime} / 2.0 ) {
-                $sleepfix = -( $obj->{updatetime} / 1000 - $sleepfix );
-            }
-            $timetosleep = $timetosleep - 300 * $sleepfix;
-
-        }
-
-        if ( $timetosleep < 0 ) {
-            utils::ErrLog( "Queries take too long for loop!", "WALL", "WARN" );
-            $timetosleep = 0;
-        }
-        if ($loopcount) { usleep $timetosleep}
+        if ($loopcount) { utils::loopSleep( $obj->{updatetime} ); }
     }
 
 }

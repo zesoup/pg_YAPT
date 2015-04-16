@@ -30,10 +30,10 @@ sub loop {
     my $output = {};
 
     my $t = Term::Cap->Tgetent;
-
+    my $pidinfos={}; # HEAVY BLOAT!
     my $ping = 0;
     my $i    = 0;
-
+    print `clear`;
     while (1) {
         my $toprowContent = 0;
         my $linestart     = gettimeofday;
@@ -43,7 +43,6 @@ sub loop {
         if ( $ping++ % 2 ) { $symbol = ' '; }
         print $t->Tgoto( "cm", 20, 0 );    # 0-based
         print( "[" . $symbol . "] pgyapt v1.0" );
-
 
         foreach my $currentCheck ( @{ $obj->{checks} } ) {
             if ( $currentCheck eq "linebreak" ) {
@@ -61,31 +60,65 @@ sub loop {
             my $r      = 6;
 
             if ( $currentCheck->{position} eq 'bottomlist' ) {
-                print $t->Tgoto( "cm", 0, $r++ );
-		print utils::colorswitch("bold white on_blue");
-		foreach my $colname (@{ $currentCheck->{base}->{colnames} }){
-                        print( ""
-                              . utils::widen( $wchar, $colname . '',7, 0,
-                                " " ) );}
-		print utils::colorswitch("reset");
-
-
-
-                foreach my $row ( @{$tup} ) {
+                # special code here 
+                  if ( $currentCheck->{action} eq 'user' ) {
                     print $t->Tgoto( "cm", 0, $r++ );
-                    if ( $row->[4][0] ) {
-                        print utils::colorswitch("bold yellow on_red");
-                    }
-                    elsif ( $row->[6][0] eq 'active' ) {
-                        print utils::colorswitch("black on_bright_green");
-                    }
-                    foreach my $val ( @{$row} ) {
+#		    my @processesraw = `top -b -n1`;
+#		    my $process = {};
+#                    foreach (@processesraw){
+#			my @rawsplit = split(' ',$_);
+#			my $tuple = [$rawsplit[0],$rawsplit[8]];
+#			$process->{$tuple->[0]} = $tuple;}
+
+                    print utils::colorswitch("bold white on_blue");
+print STDERR "\n";
+		foreach
+                      my $colname ( @{ $currentCheck->{base}->{colnames} } )
+                    {
                         print( ""
-                              . utils::widen( $wchar, $val->[0] . '', 7, 0,
-                                " " ) );
+                              . utils::widen( $wchar, $colname . '', 8, 0, " " )
+                        );
                     }
                     print utils::colorswitch("reset");
+                    foreach my $row ( @{$tup} ) {
+		    open my $FH,  "/proc/$row->[0][0]/stat";
+		    my $procstat =  readline($FH);
+		    close $FH;
+		    my @procvals = split(" ",$procstat);
+#		    print STDERR $procvals[13]."\n";
+                    my $procdelta = $procvals[13] - $pidinfos->{$row->[0][0]}[0]  or 0;   
+                    $pidinfos->{$row->[0][0]} = [$procvals[13]]; 
+                    push(@{$row}, [ $procdelta]);
+
+                        print $t->Tgoto( "cm", 0, $r++ );
+                        if ( $row->[4][0] ) {
+                            print utils::colorswitch("bold yellow on_red");
+                        }
+                        elsif ( $row->[6][0] eq 'active' ) {
+                            print utils::colorswitch("black on_bright_green");
+                        }
+                        elsif ( $row->[6][0] eq 'idle in transaction' ) {
+                            print utils::colorswitch("black on_yellow");
+                        }
+                        else {
+                            print utils::colorswitch("black on_white");
+                        }
+
+
+                        foreach my $val ( @{$row} ) {
+                            if($val->[0] eq "idle in transaction"){$val->[0]='idleIT';}
+                            print(
+                                ""
+                                  . utils::widen(
+                                    $wchar, $val->[0] . '',
+                                    8, 0, " "
+                                  )
+                            );
+                        }
+                        print utils::colorswitch("reset");
+                    }
                 }
+
             }
             else {
                 my $metricText = '';
@@ -97,7 +130,7 @@ sub loop {
                 }
                 $metricText =
                   utils::fillwith( " ",
-                    3 + ( $iteration *2 ) - length($metricText) )
+                    3 + ( $iteration * 2 ) - length($metricText) )
                   . $metricText;
                 my $linesize =
                   length( $currentCheck->{identifier} . ": " . $metricText );
@@ -121,7 +154,7 @@ sub loop {
             }
         }
         $utils::config->{DB}->commit;
-	print `clear`;
+        print `clear`;
         my $now = gettimeofday;
         my $timetosleep =
           ( $obj->{updatetime} - ( $now - $linestart ) * 1000000 );
