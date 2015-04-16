@@ -56,6 +56,9 @@ sub execute {
         for ( my $r = 0 ; $r < scalar @{ $obj->{metric} } ; $r++ ) {
             my $rowArr = [];
             for ( my $c = 0 ; $c < scalar @{ $obj->{metric}[$r] } ; $c++ ) {
+                if (not defined $obj->{   metric}[$r][$c]){  $obj->{   metric}[$r][$c]=0;}
+                if (not defined $obj->{oldmetric}[$r][$c]){  $obj->{oldmetric}[$r][$c]=0;}
+
                 push(
                     @{$rowArr},
                     [ $obj->{metric}[$r][$c] - $obj->{oldmetric}[$r][$c], 0 ]

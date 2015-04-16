@@ -35,10 +35,11 @@ sub loop {
     my $i    = 0;
     print `clear`;
     while (1) {
+        $utils::widenoverflow = 0;
         my $toprowContent = 0;
         my $linestart     = gettimeofday;
         my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
-        my $wchar  = 80;
+        my $wchar  = $wchar > 80? 80:$wchar;
         my $symbol = ':';
         if ( $ping++ % 2 ) { $symbol = ' '; }
         print $t->Tgoto( "cm", 20, 0 );    # 0-based
@@ -57,7 +58,7 @@ sub loop {
             my $unit   = $currentCheck->{base}->{units}[0] or "";
             my $status = $tup->[0][0][1];
             my $clr    = "White";
-            my $r      = 6;
+            my $r      = 1+ int($toprowContent / $wchar);
 
             if ( $currentCheck->{position} eq 'bottomlist' ) {
                 # special code here 
@@ -130,10 +131,10 @@ print STDERR "\n";
                 }
                 $metricText =
                   utils::fillwith( " ",
-                    3 + ( $iteration * 2 ) - length($metricText) )
+                    4 + ( $iteration * 2 ) - length($metricText) )
                   . $metricText;
                 my $linesize =
-                  length( $currentCheck->{identifier} . ": " . $metricText );
+                  length( $currentCheck->{identifier} . " " . $metricText );
                 if ( ( $toprowContent % $wchar ) > ( $wchar - $linesize ) ) {
                     $toprowContent += $wchar - ( $toprowContent % $wchar );
                 }
@@ -145,7 +146,7 @@ print STDERR "\n";
                 $toprowContent += $linesize;
 
                 print(  ""
-                      . $currentCheck->{identifier} . ":"
+                      . $currentCheck->{identifier} . ""
                       . utils::colorswitch("bold blue")
                       . $metricText
                       . utils::colorswitch("reset")
