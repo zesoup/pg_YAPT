@@ -43,7 +43,7 @@ sub loop {
         my $symbol = ':';
         if ( $ping++ % 2 ) { $symbol = ' '; }
         print $t->Tgoto( "cm", 20, 0 );    # 0-based
-        print( "[" . $symbol . "] pgyapt v1.0" );
+        print( "[" . $symbol . "] pgyapt ".$utils::config->{version} );
 
         foreach my $currentCheck ( @{ $obj->{checks} } ) {
             if ( $currentCheck eq "linebreak" ) {

@@ -167,7 +167,7 @@ sub main {
             eval( $opt->{addcheck} )
         );
     }
-
+   $utils::config->{version} = $version;
    #use Data::Dumper; say Dumper($utils::config->{UI}->{$opt->{ui}}->{checks} );
     ##### LOOP #####
     # Everyting is set.

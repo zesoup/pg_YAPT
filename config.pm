@@ -47,7 +47,7 @@ $config = {
             # A list is available via pg_YAPT -l
             checks     => [
                 { check => "WAL",     label => "WAL/Files" },
-                { check => "SIZE", label=>"DBSize"},
+                { check => "SIZE", label=>"ClusterSize"},
 		{ check=> "BlkAcc", label=>"BlkAcc"},
                 { check=>"Serial/Index"},
                 { check => "User", label => "User/Wait" },
@@ -91,7 +91,7 @@ tuples => {
                 {check=>"WAL", label=>"WalWritten  "},
 		"linebreak",
                 { check=>"TotRows", label=>"DBRows       "},
-                { check => "SIZE", label=>"DBSize          "},
+                { check => "SIZE", label=>"Clustersizer    "},
                 { check=>"Serial/Index", label=>"Seq/Idx-Scan"   },
 		"linebreak",
                 { check=>"BlkAcc", label=>"BlockAccess  "   },
@@ -105,6 +105,7 @@ tuples => {
                 { check => "Deleted", label => "Deleted" },
                 { check => "Returned",label => "Returned" },
                 { check => "Fetched", label => "Fetched" },
+		"linebreak",
 		{ check => "Backends", position=>"bottomlist", action=>"user"}
 			]
         },
