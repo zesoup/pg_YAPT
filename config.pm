@@ -25,7 +25,7 @@ $config = {
 
     
     database => {
-        maxAttempts    => 6,
+        maxAttempts    => 3,
         reconnectdelay => 3,
         connection     => "",
     },

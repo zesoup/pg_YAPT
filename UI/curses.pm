@@ -29,21 +29,21 @@ sub loop {
     my ( $obj, $config ) = @_;
     my $output = {};
 
-    my $t = Term::Cap->Tgetent;
-    my $pidinfos={}; # HEAVY BLOAT!
-    my $ping = 0;
-    my $i    = 0;
+    my $t        = Term::Cap->Tgetent;
+    my $pidinfos = {};                   # HEAVY BLOAT!
+    my $ping     = 0;
+    my $i        = 0;
     print `clear`;
     while (1) {
         $utils::widenoverflow = 0;
         my $toprowContent = 0;
         my $linestart     = gettimeofday;
         my ( $wchar, $hchar, $wpixels, $hpixels ) = GetTerminalSize();
-        my $wchar  = $wchar > 80? 80:$wchar;
+        my $wchar = $wchar > 80 ? 80 : $wchar;
         my $symbol = ':';
         if ( $ping++ % 2 ) { $symbol = ' '; }
         print $t->Tgoto( "cm", 20, 0 );    # 0-based
-        print( "[" . $symbol . "] pgyapt ".$utils::config->{version} );
+        print( "[" . $symbol . "] pgyapt " . $utils::config->{version} );
 
         foreach my $currentCheck ( @{ $obj->{checks} } ) {
             if ( $currentCheck eq "linebreak" ) {
@@ -58,22 +58,17 @@ sub loop {
             my $unit   = $currentCheck->{base}->{units}[0] or "";
             my $status = $tup->[0][0][1];
             my $clr    = "White";
-            my $r      = 1+ int($toprowContent / $wchar);
+            my $r      = 1 + int( $toprowContent / $wchar );
 
             if ( $currentCheck->{position} eq 'bottomlist' ) {
-                # special code here 
-                  if ( $currentCheck->{action} eq 'user' ) {
+
+                # special code here
+                if ( $currentCheck->{action} eq 'user' ) {
                     print $t->Tgoto( "cm", 0, $r++ );
-#		    my @processesraw = `top -b -n1`;
-#		    my $process = {};
-#                    foreach (@processesraw){
-#			my @rawsplit = split(' ',$_);
-#			my $tuple = [$rawsplit[0],$rawsplit[8]];
-#			$process->{$tuple->[0]} = $tuple;}
 
                     print utils::colorswitch("bold white on_blue");
-print STDERR "\n";
-		foreach
+                    print STDERR "\n";
+                    foreach
                       my $colname ( @{ $currentCheck->{base}->{colnames} } )
                     {
                         print( ""
@@ -82,14 +77,17 @@ print STDERR "\n";
                     }
                     print utils::colorswitch("reset");
                     foreach my $row ( @{$tup} ) {
-		    open my $FH,  "/proc/$row->[0][0]/stat";
-		    my $procstat =  readline($FH);
-		    close $FH;
-		    my @procvals = split(" ",$procstat);
-#		    print STDERR $procvals[13]."\n";
-                    my $procdelta = $procvals[13] - $pidinfos->{$row->[0][0]}[0]  or 0;   
-                    $pidinfos->{$row->[0][0]} = [$procvals[13]]; 
-                    push(@{$row}, [ $procdelta]);
+                        open my $FH, "/proc/$row->[0][0]/stat";
+                        my $procstat = readline($FH);
+                        close $FH;
+                        my @procvals = split( " ", $procstat );
+
+                        #		    print STDERR $procvals[13]."\n";
+                        my $procdelta =
+                          $procvals[13] - $pidinfos->{ $row->[0][0] }[0]
+                          or 0;
+                        $pidinfos->{ $row->[0][0] } = [ $procvals[13] ];
+                        push( @{$row}, [$procdelta] );
 
                         print $t->Tgoto( "cm", 0, $r++ );
                         if ( $row->[4][0] ) {
@@ -105,9 +103,10 @@ print STDERR "\n";
                             print utils::colorswitch("black on_white");
                         }
 
-
                         foreach my $val ( @{$row} ) {
-                            if($val->[0] eq "idle in transaction"){$val->[0]='idleIT';}
+                            if ( $val->[0] eq "idle in transaction" ) {
+                                $val->[0] = 'idleIT';
+                            }
                             print(
                                 ""
                                   . utils::widen(
