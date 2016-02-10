@@ -25,11 +25,13 @@ sub new {
 }
 
 sub init {
-    if ( $_[0]->{tests} ) { return undef; }
-    $_[0]->{DB}->{connected} = 1;
+    my ($config) = $_[0];
+    if ( $config->{tests} ) { return undef; }
+    $config->{DB}->{connected} = 1;
+    
     my $dbh = DBI->connect(
         'DBI:Pg:'
-          . $_[0]->{database}->{connection}
+          . $config->{database}->{connection}
           . "; application_name=pg_YAPT",
         "", "",
         {
@@ -42,20 +44,20 @@ sub init {
         and utils::ErrLog( "\n" . $DBI::errstr, "DB", "INFO" ) );
     $dbh->{AutoCommit}  = 0;
     $dbh->{ReadOnly}    = 1;
-    $dbh->{destination} = $_[0]->{database}->{connection};
+    $dbh->{destination} = $config->{database}->{connection};
     unless ($dbh) { exit(1); }
     return $dbh;
 }
 
 sub commit {
+    my ($config) = $_[0];
     return
-      if (  ( exists $_[0]->{config}->{tests} )
-        and ( $_[0]->{config}->{tests} == 1 ) );
-    return unless ( UNIVERSAL::isa( $_[0]->{dbh}, "DBI::db" ) );
-    $_[0]->{dbh}->commit;
+      if (  ( exists $config->{config}->{tests} )
+        and ( $config->{config}->{tests} == 1 ) );
+    return unless ( UNIVERSAL::isa( $config->{dbh}, "DBI::db" ) );
+    $config->{dbh}->commit;
     return;
 }
-
 
 sub ask {
     my ( $config, $query, $qparams, $check ) = @_;
@@ -69,26 +71,23 @@ sub ask {
         return $output;
     }
 
-
-
     my $attempts = 0;
     do {
-        my $output=0;
+        my $output = 0;
 
-	$output = eval {
-            die("oops")
+        $output = eval {
+            die
               unless ( UNIVERSAL::isa( $config->{dbh}, "DBI::db" ) );
             utils::ErrLog( "$query", $check->{identifier} . " via DB",
                 "debug" );
-            my $stm = $config->{dbh}->prepare($query) or die "noper";
+            my $stm = $config->{dbh}->prepare($query) or die;
             if ( exists $qparams->[0] ) {
-                $stm->execute( @{$qparams} ) or die "nope";
+                $stm->execute( @{$qparams} ) or die;
             }
             else {
-                $stm->execute()or die "nopp";
-                 # or ( utils::ErrLog( "$_", "DB", "WARN" ) );
+                $stm->execute() or die;
             }
-            my $out = $stm->fetchall_arrayref() or die "nopest";
+            my $out = $stm->fetchall_arrayref() or die;
             return $out;
         };
 
