@@ -52,11 +52,11 @@ $config = {
                 { check=>"Serial/Index"},
                 { check => "RF",  label => "Ret/Fetch" },
                 { check => "User", label => "User/Wait" },
-                { check=>"Locks", label=>"Locks/Wait"},
+                { check=>"Locks", label=>"Locks/NGranted"},
                 { check => "UpTime",  label => "Uptime" },
                 { check => "TotRows",  label => "ROWS" },
-                { check => "txID",  label => "TXID" }
-
+                { check => "txID",  label => "TXID" },
+                { check => "blkhitread",  label => "blkhitread" }
             ]
         },
 tuples => {
