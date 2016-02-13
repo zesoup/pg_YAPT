@@ -10,7 +10,7 @@ $config = {
     # tests will cause try-runs.
     # No connection to the database will be opened.
     tests   => 0,
-    humanreadable => 0,
+    humanreadable => 1,
     color => 1,
     # redirec STDERR to a file
     #log => "/var/log/pg_YAPT",
