@@ -56,7 +56,7 @@ $config = {
                 { check => "UpTime",  label => "Uptime" },
                 { check => "TotRows",  label => "ROWS" },
                 { check => "txID",  label => "TXID" },
-                { check => "blkhitread",  label => "blkhitread" }
+                { check => "blkhitread",  label => "hit/fetch" }
             ]
         },
 tuples => {
