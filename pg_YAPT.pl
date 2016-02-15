@@ -20,7 +20,7 @@ use Getopt::Long::Descriptive;
 # On Sighub, reload config and continue with thatever you did.
 
 sub main {
-    my $version = "0.0.4";
+    my $version = "0.0.5";
 
     #  Setup the argument parser.
     my ( $opt, $usage ) = describe_options(
