@@ -21,7 +21,7 @@ sub loop {
     my $configAge = $utils::configAge;
     my $loopcount = utils::getValueOfOptOrDefault( $opts, "loops=", -1 );
     my $fixwidth  = utils::getValueOfOptOrDefault( $opts, "width=", -1 );
-    my $separator = utils::colorswitch("bright_blue") . '│' . utils::colorswitch("reset")
+    my $separator = utils::colorswitch("bright_blue") . '|' . utils::colorswitch("reset")
       unless $utils::config->{delimiter};
     $obj->{hashsize} =
       @{ $config->{UI}->{$name}->{checks} };
