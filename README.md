@@ -4,13 +4,13 @@ Yet another postgres top
 ![alt tag](https://github.com/zesoup/pg_YAPT/blob/master/preview.png)
 
 
-##Install:
+## Install:
 Install dependencies for debian(jessie):
 
     apt-get install libgetopt-long-descriptive-perl libconfig-inifiles-perl libdbd-pg-perl libterm-readkey-perl
 
 
-##Usage:
+## Usage:
 Update the connectionstring in config.pm or provide one via -d
 Run the tool.
 
